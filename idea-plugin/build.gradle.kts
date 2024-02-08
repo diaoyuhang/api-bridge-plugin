@@ -6,7 +6,7 @@ group = "com.itangcent"
 version = properties["plugin_version"]!!
 
 val intellijVersions = arrayOf(
-    mapOf("jdk" to 17, "version" to "2023.1.3", "since" to "231"),
+    mapOf("jdk" to 17, "version" to "2023.3.3", "since" to "231"),
     mapOf("jdk" to 15, "version" to "2022.2.3", "since" to "223"),
     mapOf("jdk" to 11, "version" to "2021.2.1", "since" to "212")
 )
@@ -22,6 +22,9 @@ repositories {
 }
 
 dependencies {
+    implementation("org.eclipse.jgit:org.eclipse.jgit:6.6.0.202305301015-r"){
+        exclude("org.slf4j","slf4j-api")
+    }
 
     implementation(project(":common-api")) {
         exclude("org.apache.httpcomponents", "httpclient")
