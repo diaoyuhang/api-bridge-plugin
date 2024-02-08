@@ -1,0 +1,4 @@
+[DEBUG]	use recommend config
+[DEBUG]	use built-in config
+[DEBUG]	use recommend config
+[DEBUG]	use built-in config
