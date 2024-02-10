@@ -6,6 +6,8 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
+import com.intellij.psi.impl.source.PsiClassImpl
+import com.itangcent.common.constant.Attrs
 import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.model.Header
 import com.itangcent.common.model.Request
@@ -14,9 +16,12 @@ import com.itangcent.common.utils.*
 import com.itangcent.idea.condition.annotation.ConditionOnClass
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
 import com.itangcent.idea.plugin.api.export.core.*
+import com.itangcent.idea.plugin.api.export.swagger.DefaultSwaggerAnnotationResolver
+import com.itangcent.idea.plugin.api.export.swagger.SwaggerClassName
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.jvm.AnnotationHelper
 import com.itangcent.intellij.util.hasFile
+import java.lang.annotation.ElementType
 
 /**
  * Support export apis from spring controllers.
@@ -33,6 +38,9 @@ open class SpringRequestClassExporter : RequestClassExporter() {
 
     @Inject
     protected lateinit var springRequestMappingResolver: SpringRequestMappingResolver
+
+    @Inject
+    protected lateinit var defaultSwaggerAnnotationResolver: DefaultSwaggerAnnotationResolver
 
     override fun processClass(cls: PsiClass, classExportContext: ClassExportContext) {
 
@@ -313,6 +321,36 @@ open class SpringRequestClassExporter : RequestClassExporter() {
         requestBuilderListener.setMethodIfMissed(methodExportContext, request, httpMethod)
         val httpPath = basePath.concat(findHttpPath(requestMapping))
         requestBuilderListener.setPath(methodExportContext, request, httpPath)
+
+        request.someAnnotationsInfo = findSwaggerAnno(methodExportContext)
+    }
+
+    private fun findSwaggerAnno(methodExportContext: MethodExportContext): LinkedHashMap<String,Any?> {
+        val linkedHashMap = linkedMapOf<String, Any?>()
+        val psiMethod = methodExportContext.psi()
+        val psiClass:PsiClassImpl = psiMethod.parent as PsiClassImpl
+
+        val tagInfo = defaultSwaggerAnnotationResolver.findTag(psiClass)
+        if (tagInfo != null) {
+            linkedHashMap.sub(ElementType.TYPE.toString())[Attrs.TAG_ATTR]=tagInfo
+        }
+
+        val operationInfo = defaultSwaggerAnnotationResolver.findOperation(psiMethod)
+        if (operationInfo!=null){
+            linkedHashMap.sub(ElementType.METHOD.toString())[Attrs.OPERATION_ATTR] = operationInfo
+        }
+
+        val apiResponsesInfo = defaultSwaggerAnnotationResolver.findApiResponses(psiMethod)
+        if (apiResponsesInfo!=null){
+            linkedHashMap.sub(ElementType.METHOD.toString())[Attrs.API_RESPONSES_ATTR] = apiResponsesInfo
+        }
+
+        val apiResponseInfo = defaultSwaggerAnnotationResolver.findApiResponse(psiMethod)
+        if (apiResponseInfo != null) {
+            linkedHashMap.sub(ElementType.METHOD.toString())[Attrs.API_RESPONSE_ATTR] = apiResponseInfo
+        }
+
+        return linkedHashMap
     }
 
     override fun processCompleted(methodExportContext: MethodExportContext, request: Request) {

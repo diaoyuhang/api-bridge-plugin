@@ -2,6 +2,7 @@ package com.itangcent.common.model
 
 import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.utils.firstOrNull
+import java.lang.annotation.ElementType
 
 /**
  * Request represent A Http API.
@@ -41,6 +42,8 @@ open class Request : Doc() {
     var bodyAttr: String? = null
 
     var response: MutableList<Response>? = null
+
+    var someAnnotationsInfo: LinkedHashMap<String,Any?>? = null
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

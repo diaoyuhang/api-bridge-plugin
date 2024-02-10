@@ -13,12 +13,13 @@ object Attrs {
     const val PREFIX = "@"
 
     const val CLASS_NAME_ATTR = "@ClassName"
+    const val QUALIFIED_CLASS_NAME_ATTR = "@QualifiedClassName"
 
     const val TAG_ATTR = "@Tag"
     const val OPERATION_ATTR = "@Operation"
     const val PARAMETERS_ATTR  = "@Parameters"
     const val PARAMETER_ATTR= "@Parameter"
-    const val SCHEMA_ATTR = "@schema"
+    const val SCHEMA_ATTR = "@Schema"
     const val API_RESPONSE_ATTR = "@ApiResponse"
     const val API_RESPONSES_ATTR = "@ApiResponses"
 
@@ -26,6 +27,8 @@ object Attrs {
     const val MAX_ATTR = "@Max"
     const val SIZE_ATTR = "@Size"
     const val EMAIL_ATTR = "@Email"
+
+    const val JAVA_TYPE_ATTR="@javaType"
 
     val ALL = arrayOf(COMMENT_ATTR, REQUIRED_ATTR, DEFAULT_VALUE_ATTR)
 }
