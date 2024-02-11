@@ -28,6 +28,8 @@ object Attrs {
     const val SIZE_ATTR = "@Size"
     const val EMAIL_ATTR = "@Email"
 
+    const val DEPRECATED_ATTR = "@Deprecated"
+
     const val JAVA_TYPE_ATTR="@javaType"
 
     val ALL = arrayOf(COMMENT_ATTR, REQUIRED_ATTR, DEFAULT_VALUE_ATTR)

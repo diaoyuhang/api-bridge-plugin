@@ -10,13 +10,10 @@ import com.itangcent.common.logger.Log
 import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.AdditionalField
 import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
-import com.itangcent.idea.plugin.api.export.swagger.DefaultSwaggerAnnotationResolver
-import com.itangcent.idea.plugin.api.export.swagger.SwaggerClassName
-import com.itangcent.idea.plugin.api.export.swagger.ValidationClassName
+import com.itangcent.idea.plugin.api.export.swagger.DefaultApiAnnotationResolver
 import com.itangcent.idea.plugin.settings.EventRecords
 import com.itangcent.intellij.extend.toPrettyString
 import com.itangcent.intellij.jvm.AccessibleField
-import com.itangcent.intellij.jvm.AnnotationHelper
 import com.itangcent.intellij.jvm.PsiExpressionResolver
 import com.itangcent.intellij.jvm.duck.DuckType
 import com.itangcent.intellij.jvm.element.ExplicitClass
@@ -36,7 +33,7 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
     @Inject
     private lateinit var psiExpressionResolver: PsiExpressionResolver
     @Inject
-    protected lateinit var defaultSwaggerAnnotationResolver: DefaultSwaggerAnnotationResolver
+    protected lateinit var defaultApiAnnotationResolver: DefaultApiAnnotationResolver
 
     override fun afterParseField(
         accessibleField: AccessibleField,
@@ -90,27 +87,27 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
         fields[Attrs.QUALIFIED_CLASS_NAME_ATTR] = resourcePsiClass.psi().qualifiedName
         fields.sub(Attrs.JAVA_TYPE_ATTR)[accessibleField.jsonFieldName()]=accessibleField.field!!.getType().name()
 
-        val schemaInfo = defaultSwaggerAnnotationResolver.findSchema(fieldPsi)
+        val schemaInfo = defaultApiAnnotationResolver.findSchema(fieldPsi)
         if (schemaInfo != null) {
             fields.sub(Attrs.SCHEMA_ATTR)[accessibleField.jsonFieldName()] = schemaInfo
         }
 
-        val minInfo = defaultSwaggerAnnotationResolver.findMin(fieldPsi)
+        val minInfo = defaultApiAnnotationResolver.findMin(fieldPsi)
         if (schemaInfo != null) {
             fields.sub(Attrs.MIN_ATTR)[accessibleField.jsonFieldName()] = minInfo
         }
 
-        val maxInfo = defaultSwaggerAnnotationResolver.findMax(fieldPsi)
+        val maxInfo = defaultApiAnnotationResolver.findMax(fieldPsi)
         if (schemaInfo != null) {
             fields.sub(Attrs.MAX_ATTR)[accessibleField.jsonFieldName()] = maxInfo
         }
 
-        val emailInfo = defaultSwaggerAnnotationResolver.findEmail(fieldPsi)
+        val emailInfo = defaultApiAnnotationResolver.findEmail(fieldPsi)
         if (schemaInfo != null) {
             fields.sub(Attrs.EMAIL_ATTR)[accessibleField.jsonFieldName()] = emailInfo
         }
 
-        val sizeInfo = defaultSwaggerAnnotationResolver.findSize(fieldPsi)
+        val sizeInfo = defaultApiAnnotationResolver.findSize(fieldPsi)
         if (schemaInfo != null) {
             fields.sub(Attrs.SIZE_ATTR)[accessibleField.jsonFieldName()] = sizeInfo
         }

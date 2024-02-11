@@ -16,8 +16,7 @@ import com.itangcent.common.utils.*
 import com.itangcent.idea.condition.annotation.ConditionOnClass
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
 import com.itangcent.idea.plugin.api.export.core.*
-import com.itangcent.idea.plugin.api.export.swagger.DefaultSwaggerAnnotationResolver
-import com.itangcent.idea.plugin.api.export.swagger.SwaggerClassName
+import com.itangcent.idea.plugin.api.export.swagger.DefaultApiAnnotationResolver
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.jvm.AnnotationHelper
 import com.itangcent.intellij.util.hasFile
@@ -40,7 +39,7 @@ open class SpringRequestClassExporter : RequestClassExporter() {
     protected lateinit var springRequestMappingResolver: SpringRequestMappingResolver
 
     @Inject
-    protected lateinit var defaultSwaggerAnnotationResolver: DefaultSwaggerAnnotationResolver
+    protected lateinit var defaultApiAnnotationResolver: DefaultApiAnnotationResolver
 
     override fun processClass(cls: PsiClass, classExportContext: ClassExportContext) {
 
@@ -330,24 +329,29 @@ open class SpringRequestClassExporter : RequestClassExporter() {
         val psiMethod = methodExportContext.psi()
         val psiClass:PsiClassImpl = psiMethod.parent as PsiClassImpl
 
-        val tagInfo = defaultSwaggerAnnotationResolver.findTag(psiClass)
+        val tagInfo = defaultApiAnnotationResolver.findTag(psiClass)
         if (tagInfo != null) {
             linkedHashMap.sub(ElementType.TYPE.toString())[Attrs.TAG_ATTR]=tagInfo
         }
 
-        val operationInfo = defaultSwaggerAnnotationResolver.findOperation(psiMethod)
+        val operationInfo = defaultApiAnnotationResolver.findOperation(psiMethod)
         if (operationInfo!=null){
             linkedHashMap.sub(ElementType.METHOD.toString())[Attrs.OPERATION_ATTR] = operationInfo
         }
 
-        val apiResponsesInfo = defaultSwaggerAnnotationResolver.findApiResponses(psiMethod)
+        val apiResponsesInfo = defaultApiAnnotationResolver.findApiResponses(psiMethod)
         if (apiResponsesInfo!=null){
             linkedHashMap.sub(ElementType.METHOD.toString())[Attrs.API_RESPONSES_ATTR] = apiResponsesInfo
         }
 
-        val apiResponseInfo = defaultSwaggerAnnotationResolver.findApiResponse(psiMethod)
+        val apiResponseInfo = defaultApiAnnotationResolver.findApiResponse(psiMethod)
         if (apiResponseInfo != null) {
             linkedHashMap.sub(ElementType.METHOD.toString())[Attrs.API_RESPONSE_ATTR] = apiResponseInfo
+        }
+
+        val deprecatedInfo = defaultApiAnnotationResolver.findDeprecated(psiMethod)
+        if (deprecatedInfo!=null){
+            linkedHashMap.sub(ElementType.METHOD.toString())[Attrs.DEPRECATED_ATTR] = deprecatedInfo
         }
 
         return linkedHashMap

@@ -331,7 +331,7 @@ open class SuvApiExporter {
         }
     }
 
-    class PostmanApiExporterAdapter : ApiExporterAdapter() {
+    open class PostmanApiExporterAdapter : ApiExporterAdapter() {
 
         @Inject
         private lateinit var postmanApiHelper: PostmanApiHelper
@@ -388,6 +388,13 @@ open class SuvApiExporter {
             actionContext.instance(PostmanApiExporter::class)
                     .export(docs.filterAs())
         }
+    }
+
+    class ApiPlatformExporterAdapter : PostmanApiExporterAdapter() {
+        override fun doExportDocs(docs: MutableList<Doc>) {
+
+        }
+
     }
 
     class MarkdownApiExporterAdapter : ApiExporterAdapter() {
@@ -571,7 +578,8 @@ open class SuvApiExporter {
                 ApiExporterWrapper(PostmanApiExporterAdapter::class, "Postman", Request::class),
                 ApiExporterWrapper(MarkdownApiExporterAdapter::class, "Markdown", Request::class, MethodDoc::class),
                 ApiExporterWrapper(CurlApiExporterAdapter::class, "Curl", Request::class),
-            ApiExporterWrapper(HttpClientApiExporterAdapter::class, "HttpClient", Request::class)
+            ApiExporterWrapper(HttpClientApiExporterAdapter::class, "HttpClient", Request::class),
+            ApiExporterWrapper(ApiPlatformExporterAdapter::class, "ApiPlatform", Request::class)
         )
     }
 }
