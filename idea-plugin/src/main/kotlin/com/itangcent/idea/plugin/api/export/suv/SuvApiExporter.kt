@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.Messages
 import com.intellij.psi.PsiMethod
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Doc
@@ -27,7 +28,9 @@ import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.idea.plugin.dialog.SuvApiExportDialog
 import com.itangcent.idea.plugin.rule.SuvRuleParser
 import com.itangcent.idea.plugin.settings.SettingBinder
-import com.itangcent.idea.plugin.settings.helper.*
+import com.itangcent.idea.plugin.settings.helper.IntelligentSettingsHelper
+import com.itangcent.idea.plugin.settings.helper.MarkdownSettingsHelper
+import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
 import com.itangcent.idea.psi.PsiResource
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
 import com.itangcent.idea.utils.FileSaveHelper
@@ -50,6 +53,8 @@ import com.itangcent.intellij.tip.TipsHelper
 import com.itangcent.intellij.util.UIUtils
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import com.itangcent.suv.http.HttpClientProvider
+import com.itangcent.utils.GitUtils
+import org.apache.commons.lang3.StringUtils
 import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
@@ -346,7 +351,7 @@ open class SuvApiExporter {
         private val postmanFormatter: PostmanFormatter? = null
 
         @Inject
-        private lateinit var project: Project
+        lateinit var project: Project
 
         override fun actionName(): String {
             return "PostmanExportAction"
@@ -392,7 +397,15 @@ open class SuvApiExporter {
 
     class ApiPlatformExporterAdapter : PostmanApiExporterAdapter() {
         override fun doExportDocs(docs: MutableList<Doc>) {
-
+            try {
+                val projectFilePath = project.basePath
+                val gitBranchName = GitUtils.getGitBranchName(projectFilePath!!)
+                if (StringUtils.isBlank(gitBranchName)){
+                    throw RuntimeException("git branch is empty")
+                }
+            } catch (e: Exception) {
+                logger!!.traceError("获取项目git分支失败",e)
+            }
         }
 
     }

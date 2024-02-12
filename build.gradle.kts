@@ -71,3 +71,9 @@ tasks.create("codeCoverageReport", JacocoReport::class) {
 
     generate()
 }
+tasks.withType<JavaCompile>(){
+    options.encoding="UTF-8"
+}
+tasks.withType<Javadoc>(){
+    options.encoding="UTF-8"
+}
