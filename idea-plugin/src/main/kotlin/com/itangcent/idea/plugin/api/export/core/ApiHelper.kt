@@ -36,7 +36,7 @@ open class ApiHelper {
 
         val docByRule = ruleComputer.computer(ClassExportRuleKeys.METHOD_DOC, psiMethod)
         headLine = docByRule?.headLine()
-        if (headLine.notNullOrEmpty()) return headLine!!
+        if (headLine.notNullOrEmpty()) return psiMethod.name+headLine!!
 
         return psiMethod.name
     }
@@ -89,7 +89,7 @@ open class ApiHelper {
                 attrHandle(attrOfMethod)
             } else {
                 val headLine = attrOfMethod.headLine()
-                nameHandle(headLine!!)
+                nameHandle(explicitMethod.name()+headLine!!)
                 named = true
                 attrHandle(attrOfMethod.removePrefix(headLine).trimStart())
             }
