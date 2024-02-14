@@ -4,8 +4,8 @@ import com.google.inject.Inject
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.Messages
 import com.intellij.psi.PsiMethod
+import com.itangcent.common.constant.Attrs
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Doc
 import com.itangcent.common.model.MethodDoc
@@ -54,8 +54,19 @@ import com.itangcent.intellij.util.UIUtils
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import com.itangcent.suv.http.HttpClientProvider
 import com.itangcent.utils.GitUtils
+import io.swagger.v3.oas.models.Components
+import io.swagger.v3.oas.models.OpenAPI
+import io.swagger.v3.oas.models.Operation
+import io.swagger.v3.oas.models.Paths
+import io.swagger.v3.oas.models.info.Info
+import io.swagger.v3.oas.models.responses.ApiResponse
+import io.swagger.v3.oas.models.responses.ApiResponses
+import io.swagger.v3.oas.models.tags.Tag
 import org.apache.commons.lang3.StringUtils
+import org.springdoc.core.Constants
+import java.lang.annotation.ElementType
 import java.util.*
+import kotlin.collections.LinkedHashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
 
@@ -403,9 +414,73 @@ open class SuvApiExporter {
                 if (StringUtils.isBlank(gitBranchName)){
                     throw RuntimeException("git branch is empty")
                 }
+
+                val operation = Operation()
+                val openApiList = mutableListOf<OpenAPI>()
+
+                for (request in docs.filterAs<Request>()){
+                    val openApi = buildOpenApi()
+                    openApiList.add(openApi)
+
+                    val someAnnotationsInfo = request.someAnnotationsInfo
+                    val methodAnnoInfo = someAnnotationsInfo!![ElementType.METHOD.toString()] as Map<*, *>
+                    val classAnnoInfo = someAnnotationsInfo!![ElementType.TYPE.toString()] as Map<*, *>
+
+                    if (methodAnnoInfo.contains(Attrs.DEPRECATED_ATTR)){
+                        operation.deprecated=true
+                    }
+
+                    if(methodAnnoInfo.contains(Attrs.OPERATION_ATTR)){
+                        val operationInfo = methodAnnoInfo[Attrs.OPERATION_ATTR] as Map<*, *>
+                        operation.summary = operationInfo["summary"] as String
+                        operation.description = operationInfo["description"] as String
+
+                    }
+
+                    if(classAnnoInfo.contains(Attrs.TAG_ATTR)){
+                        val tagInfo = classAnnoInfo[Attrs.TAG_ATTR] as Map<*,*>
+                        val tagStrList = mutableListOf<String>()
+                        val name = tagInfo["name"] as String
+                        val description = tagInfo["description"] as String
+                        tagStrList.add(name)
+                        operation.tags = tagStrList
+                        val tag = Tag()
+                        tag.name = name
+                        tag.description = description
+
+                        openApi.tags = listOf(tag)
+                    }
+
+                    if(methodAnnoInfo.contains(Attrs.API_RESPONSES_ATTR)){
+                        val apiResponses = ApiResponses()
+                        val apiResponsesInfo = methodAnnoInfo[Attrs.API_RESPONSES_ATTR] as Map<*,*>
+                        val apiResponseList = apiResponsesInfo["value"] as Array<*>
+                        operation.responses = apiResponses
+
+                        for (objRes in apiResponseList) {
+                            val ar = objRes as LinkedHashMap<*,*>
+
+                            val apiResponse = ApiResponse()
+                            val httpCode = ar["responseCode"] as String
+                            val description = ar["description"] as String
+                            apiResponse.description = description
+
+                            apiResponses.addApiResponse(httpCode,apiResponse)
+                        }
+                    }
+                }
             } catch (e: Exception) {
-                logger!!.traceError("获取项目git分支失败",e)
+                logger!!.traceError("get project git branch fail",e)
             }
+        }
+
+        private fun buildOpenApi(): OpenAPI {
+            val openApi = OpenAPI()
+            openApi.components = Components()
+            openApi.paths =Paths()
+
+            openApi.info = Info().title(Constants.DEFAULT_TITLE).version(Constants.DEFAULT_VERSION)
+            return openApi
         }
 
     }
