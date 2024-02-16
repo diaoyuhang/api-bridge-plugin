@@ -22,6 +22,15 @@ repositories {
 }
 
 dependencies {
+
+    implementation("org.springdoc:springdoc-openapi-ui:1.7.0"){
+        exclude("org.slf4j","slf4j-api")
+        exclude("org.webjars","swagger-ui")
+        exclude("org.springframework","spring-webmvc")
+        exclude("org.springframework","spring-web")
+        exclude("org.springframework.boot","spring-boot-autoconfigure")
+    }
+
     implementation("org.eclipse.jgit:org.eclipse.jgit:6.6.0.202305301015-r"){
         exclude("org.slf4j","slf4j-api")
     }
