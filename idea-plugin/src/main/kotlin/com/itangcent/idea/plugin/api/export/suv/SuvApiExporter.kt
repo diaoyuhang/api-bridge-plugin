@@ -432,8 +432,8 @@ open class SuvApiExporter {
 
                     if(methodAnnoInfo.contains(Attrs.OPERATION_ATTR)){
                         val operationInfo = methodAnnoInfo[Attrs.OPERATION_ATTR] as Map<*, *>
-                        operation.summary = operationInfo["summary"] as String
-                        operation.description = operationInfo["description"] as String
+                        operation.summary = operationInfo["summary"] as? String
+                        operation.description = operationInfo["description"] as? String
 
                     }
 

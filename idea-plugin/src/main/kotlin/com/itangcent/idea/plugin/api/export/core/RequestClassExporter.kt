@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.api.export.core
 
 import com.google.inject.Inject
 import com.intellij.psi.*
+import com.intellij.psi.impl.source.PsiParameterImpl
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.exception.ProcessCanceledException
@@ -17,6 +18,7 @@ import com.itangcent.idea.plugin.api.MethodInferHelper
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnDoc
 import com.itangcent.idea.plugin.api.export.rule.RequestRuleWrap
 import com.itangcent.idea.plugin.api.export.spring.SpringClassName
+import com.itangcent.idea.plugin.api.export.swagger.DefaultApiAnnotationResolver
 import com.itangcent.idea.plugin.settings.helper.IntelligentSettingsHelper
 import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.idea.psi.PsiMethodSet
@@ -35,6 +37,7 @@ import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ContextSwitchListener
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.*
+import java.lang.annotation.ElementType
 import kotlin.reflect.KClass
 
 
@@ -105,6 +108,9 @@ abstract class RequestClassExporter : ClassExporter {
 
     @Inject
     protected lateinit var commentResolver: CommentResolver
+
+    @Inject
+    protected lateinit var defaultApiAnnotationResolver: DefaultApiAnnotationResolver
 
     override fun export(cls: Any, docHandle: DocHandle): Boolean {
         if (cls !is PsiClass) {
@@ -610,6 +616,25 @@ abstract class RequestClassExporter : ClassExporter {
                         ?: false,
                     paramDesc
                 )
+                val paramPsi = parameterExportContext.psi() as PsiParameterImpl
+                val linkedHashMap = request.someAnnotationsInfo
+                    ?: linkedMapOf<String, Any?>().also { request.someAnnotationsInfo = it }
+
+                val fieldAnnoInfo = linkedHashMap.sub(ElementType.FIELD.toString()).sub(paramPsi.name)
+                val schemaInfo = defaultApiAnnotationResolver.findSchema(paramPsi)
+                schemaInfo?.let { fieldAnnoInfo[Attrs.SCHEMA_ATTR]=it }
+
+                val maxInfo = defaultApiAnnotationResolver.findMax(paramPsi)
+                maxInfo?.let { fieldAnnoInfo[Attrs.MAX_ATTR]=it }
+
+                val sizeInfo = defaultApiAnnotationResolver.findSize(paramPsi)
+                sizeInfo?.let { fieldAnnoInfo[Attrs.SIZE_ATTR]=it }
+
+                val minInfo = defaultApiAnnotationResolver.findMin(paramPsi)
+                minInfo?.let { fieldAnnoInfo[Attrs.MIN_ATTR]=it }
+
+                val emailInfo = defaultApiAnnotationResolver.findEmail(paramPsi)
+                emailInfo?.let { fieldAnnoInfo[Attrs.EMAIL_ATTR]=it }
                 return
             }
 
@@ -851,6 +876,7 @@ abstract class RequestClassExporter : ClassExporter {
                 this@RequestClassExporter.intelligentSettingsHelper.jsonOptionForInput(JsonOption.READ_COMMENT)
             )
             this.setExt("raw", typeObject)
+            this.setExt("javaType",paramType)
             return@cache typeObject
         }
     }

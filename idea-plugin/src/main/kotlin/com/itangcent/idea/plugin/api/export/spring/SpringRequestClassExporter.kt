@@ -38,9 +38,6 @@ open class SpringRequestClassExporter : RequestClassExporter() {
     @Inject
     protected lateinit var springRequestMappingResolver: SpringRequestMappingResolver
 
-    @Inject
-    protected lateinit var defaultApiAnnotationResolver: DefaultApiAnnotationResolver
-
     override fun processClass(cls: PsiClass, classExportContext: ClassExportContext) {
 
         val ctrlRequestMappingAnn = findRequestMappingInAnn(cls)

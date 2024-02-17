@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.api.export.core
 
 import com.google.inject.ImplementedBy
 import com.itangcent.common.model.*
+import com.itangcent.utils.setExts
 
 @ImplementedBy(DefaultRequestBuilderListener::class)
 interface RequestBuilderListener {
@@ -149,6 +150,7 @@ fun RequestBuilderListener.addParam(
     param.value = value
     param.required = required
     param.desc = desc
+    exportContext.exts()?.let { param.setExts(it) }
     this.addParam(
         exportContext, request,
         param
