@@ -4,12 +4,14 @@ import com.google.inject.Inject
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
+import com.intellij.psi.impl.source.PsiFieldImpl
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.kit.KVUtils
 import com.itangcent.common.logger.Log
 import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.AdditionalField
 import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
+import com.itangcent.idea.plugin.api.export.swagger.ApiAnnotationUtil
 import com.itangcent.idea.plugin.api.export.swagger.DefaultApiAnnotationResolver
 import com.itangcent.idea.plugin.settings.EventRecords
 import com.itangcent.intellij.extend.toPrettyString
@@ -34,6 +36,8 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
     private lateinit var psiExpressionResolver: PsiExpressionResolver
     @Inject
     protected lateinit var defaultApiAnnotationResolver: DefaultApiAnnotationResolver
+    @Inject
+    protected lateinit var apiAnnotationUtil: ApiAnnotationUtil
 
     override fun afterParseField(
         accessibleField: AccessibleField,
@@ -86,31 +90,8 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
         fields[Attrs.CLASS_NAME_ATTR] = resourcePsiClass.psi().name
         fields[Attrs.QUALIFIED_CLASS_NAME_ATTR] = resourcePsiClass.psi().qualifiedName
         fields.sub(Attrs.JAVA_TYPE_ATTR)[accessibleField.jsonFieldName()]=accessibleField.field!!.getType().name()
+        apiAnnotationUtil.collectJsonBodyFieldAnnotationInfo(fields,fieldPsi as PsiFieldImpl)
 
-        val schemaInfo = defaultApiAnnotationResolver.findSchema(fieldPsi)
-        if (schemaInfo != null) {
-            fields.sub(Attrs.SCHEMA_ATTR)[accessibleField.jsonFieldName()] = schemaInfo
-        }
-
-        val minInfo = defaultApiAnnotationResolver.findMin(fieldPsi)
-        if (schemaInfo != null) {
-            fields.sub(Attrs.MIN_ATTR)[accessibleField.jsonFieldName()] = minInfo
-        }
-
-        val maxInfo = defaultApiAnnotationResolver.findMax(fieldPsi)
-        if (schemaInfo != null) {
-            fields.sub(Attrs.MAX_ATTR)[accessibleField.jsonFieldName()] = maxInfo
-        }
-
-        val emailInfo = defaultApiAnnotationResolver.findEmail(fieldPsi)
-        if (schemaInfo != null) {
-            fields.sub(Attrs.EMAIL_ATTR)[accessibleField.jsonFieldName()] = emailInfo
-        }
-
-        val sizeInfo = defaultApiAnnotationResolver.findSize(fieldPsi)
-        if (schemaInfo != null) {
-            fields.sub(Attrs.SIZE_ATTR)[accessibleField.jsonFieldName()] = sizeInfo
-        }
     }
 
     override fun resolveAdditionalField(

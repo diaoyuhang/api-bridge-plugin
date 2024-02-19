@@ -16,7 +16,6 @@ import com.itangcent.common.utils.*
 import com.itangcent.idea.condition.annotation.ConditionOnClass
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
 import com.itangcent.idea.plugin.api.export.core.*
-import com.itangcent.idea.plugin.api.export.swagger.DefaultApiAnnotationResolver
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.jvm.AnnotationHelper
 import com.itangcent.intellij.util.hasFile
@@ -326,31 +325,11 @@ open class SpringRequestClassExporter : RequestClassExporter() {
         val psiMethod = methodExportContext.psi()
         val psiClass:PsiClassImpl = psiMethod.parent as PsiClassImpl
 
-        val tagInfo = defaultApiAnnotationResolver.findTag(psiClass)
-        if (tagInfo != null) {
-            linkedHashMap.sub(ElementType.TYPE.toString())[Attrs.TAG_ATTR]=tagInfo
-        }
+        val classAnnoInfo = linkedHashMap.sub(ElementType.TYPE.toString())
+        apiAnnotationUtil.collectClassAnnotationInfo(classAnnoInfo,psiClass)
 
-        val operationInfo = defaultApiAnnotationResolver.findOperation(psiMethod)
-        if (operationInfo!=null){
-            linkedHashMap.sub(ElementType.METHOD.toString())[Attrs.OPERATION_ATTR] = operationInfo
-        }
-
-        val apiResponsesInfo = defaultApiAnnotationResolver.findApiResponses(psiMethod)
-        if (apiResponsesInfo!=null){
-            linkedHashMap.sub(ElementType.METHOD.toString())[Attrs.API_RESPONSES_ATTR] = apiResponsesInfo
-        }
-
-        val apiResponseInfo = defaultApiAnnotationResolver.findApiResponse(psiMethod)
-        if (apiResponseInfo != null) {
-            linkedHashMap.sub(ElementType.METHOD.toString())[Attrs.API_RESPONSE_ATTR] = apiResponseInfo
-        }
-
-        val deprecatedInfo = defaultApiAnnotationResolver.findDeprecated(psiMethod)
-        if (deprecatedInfo!=null){
-            linkedHashMap.sub(ElementType.METHOD.toString())[Attrs.DEPRECATED_ATTR] = deprecatedInfo
-        }
-
+        val methodAnnoInfo = linkedHashMap.sub(ElementType.METHOD.toString())
+        apiAnnotationUtil.collectMethodAnnotationInfo(methodAnnoInfo,psiMethod)
         return linkedHashMap
     }
 

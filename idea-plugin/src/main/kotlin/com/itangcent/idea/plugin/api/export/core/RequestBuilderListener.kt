@@ -178,6 +178,8 @@ fun RequestBuilderListener.addFormParam(
     param.required = required
     param.desc = desc
     param.type = "text"
+
+    param.setExts(exportContext.exts()?.get("raw")?.let { it as Map<String, Any?> } ?: linkedMapOf())
     this.addFormParam(
         exportContext, request,
         param
