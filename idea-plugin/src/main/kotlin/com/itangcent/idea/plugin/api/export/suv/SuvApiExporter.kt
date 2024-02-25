@@ -11,6 +11,7 @@ import com.itangcent.common.model.Doc
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.filterAs
+import com.itangcent.common.utils.getPropertyValue
 import com.itangcent.debug.LoggerCollector
 import com.itangcent.idea.config.CachedResourceResolver
 import com.itangcent.idea.plugin.api.ClassApiExporterHelper
@@ -24,6 +25,7 @@ import com.itangcent.idea.plugin.api.export.curl.CurlExporter
 import com.itangcent.idea.plugin.api.export.http.HttpClientExporter
 import com.itangcent.idea.plugin.api.export.markdown.MarkdownFormatter
 import com.itangcent.idea.plugin.api.export.postman.*
+import com.itangcent.idea.plugin.api.export.swagger.SchemaBuildUtil
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.idea.plugin.dialog.SuvApiExportDialog
 import com.itangcent.idea.plugin.rule.SuvRuleParser
@@ -54,11 +56,14 @@ import com.itangcent.intellij.util.UIUtils
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import com.itangcent.suv.http.HttpClientProvider
 import com.itangcent.utils.GitUtils
+import io.swagger.v3.core.util.PrimitiveType
 import io.swagger.v3.oas.models.Components
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.Operation
 import io.swagger.v3.oas.models.Paths
 import io.swagger.v3.oas.models.info.Info
+import io.swagger.v3.oas.models.media.Schema
+import io.swagger.v3.oas.models.media.StringSchema
 import io.swagger.v3.oas.models.responses.ApiResponse
 import io.swagger.v3.oas.models.responses.ApiResponses
 import io.swagger.v3.oas.models.tags.Tag
@@ -435,6 +440,22 @@ open class SuvApiExporter {
                         operation.summary = operationInfo["summary"] as? String
                         operation.description = operationInfo["description"] as? String
 
+                    }
+
+                    //构建schema
+                    val body: LinkedHashMap<String, *>? = request.body?.let { it as? LinkedHashMap<String, *> }
+                    if (body != null) {
+                        val  schema = PrimitiveType.OBJECT.createProperty()
+                        val properties = linkedMapOf<String,Schema<*>?>()
+                        schema.properties= properties
+
+                        for((key,value) in body){
+                            if (key.startsWith(Attrs.PREFIX)){
+
+                            }else{
+                                properties[key] = SchemaBuildUtil.obtainTypeSchema(request, key)
+                            }
+                        }
                     }
 
                     if(classAnnoInfo.contains(Attrs.TAG_ATTR)){
