@@ -31,7 +31,7 @@ object SchemaBuildUtil {
         val fieldTypeMap = body[Attrs.JAVA_TYPE_ATTR]?.let { it as LinkedHashMap<String, String> } ?: linkedMapOf()
         val fieldType = fieldTypeMap[fieldName] as String
         val schemaBuild = getTypeSchemaBuild(fieldType)
-        return schemaBuild!!.buildSchema(request, fieldName)
+        return schemaBuild.buildSchema(request, fieldName)
     }
 
     private fun getTypeSchemaBuild(fieldType: String): SchemaBuild {
