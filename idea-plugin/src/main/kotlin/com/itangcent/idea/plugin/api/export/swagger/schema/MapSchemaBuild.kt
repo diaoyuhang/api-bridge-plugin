@@ -11,6 +11,8 @@ class MapSchemaBuild:SchemaBuild {
     }
 
     override fun getType(): Map<String, SchemaBuild> {
-        TODO("Not yet implemented")
+        val map = mutableMapOf<String, SchemaBuild>()
+        map["Map"] = this
+        return map
     }
 }

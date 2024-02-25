@@ -12,6 +12,9 @@ class ArraySchemaBuild:SchemaBuild {
     }
 
     override fun getType(): Map<String, SchemaBuild> {
-        TODO("Not yet implemented")
+        val map = mutableMapOf<String, SchemaBuild>()
+        map["[]"] = this
+        map["List"] = this
+        return map
     }
 }
