@@ -5,8 +5,9 @@ import io.swagger.v3.core.util.PrimitiveType
 import io.swagger.v3.oas.models.media.Schema
 
 class FloatSchemaBuild:SchemaBuild {
-    override fun buildSchema(request: Request, fieldName: String): Schema<*> {
+    override fun buildSchema(requestBody:  LinkedHashMap<String, *>, fieldName: String?): Schema<*> {
         val floatSchema = PrimitiveType.FLOAT.createProperty()
+
         return floatSchema
     }
 

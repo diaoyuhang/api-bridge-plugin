@@ -3,11 +3,12 @@ package com.itangcent.idea.plugin.api.export.swagger
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.api.export.swagger.schema.*
+import com.itangcent.idea.plugin.api.export.swagger.schema.ObjectSchemaBuild
 import io.swagger.v3.oas.models.media.Schema
 
 object SchemaBuildUtil {
     private val typeSchemaBuildMap = mutableMapOf<String, SchemaBuild>()
-    private const val ARRAY_TYPE_SUFFIX = "[]"
+    const val ARRAY_TYPE_SUFFIX = "[]"
 
     init {
         typeSchemaBuildMap.putAll(StringSchemaBuild().getType())
@@ -34,7 +35,7 @@ object SchemaBuildUtil {
         return schemaBuild.buildSchema(request, fieldName)
     }
 
-    private fun getTypeSchemaBuild(fieldType: String): SchemaBuild {
+    fun getTypeSchemaBuild(fieldType: String): SchemaBuild {
         return typeSchemaBuildMap[fieldType]
             ?: run {
                 if (fieldType.endsWith(ARRAY_TYPE_SUFFIX)) {
@@ -43,6 +44,6 @@ object SchemaBuildUtil {
                     null
                 }
             }
-            ?: throw RuntimeException("${fieldType} not found TypeSchemaBuild")
+            ?: ObjectSchemaBuild()
     }
 }

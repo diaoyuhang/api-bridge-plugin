@@ -6,10 +6,12 @@ import io.swagger.v3.core.util.PrimitiveType
 import io.swagger.v3.oas.models.media.Schema
 
 class ByteSchemaBuild:SchemaBuild {
-    override fun buildSchema(request: Request, fieldName: String): Schema<*> {
+    override fun buildSchema(requestBody:  LinkedHashMap<String, *>, fieldName: String?): Schema<*> {
         val byteSchema = PrimitiveType.BYTE.createProperty()
-        byteSchema.name = fieldName
-        AnnoInfoAssemble.SchemaAnnoAssemble.assembleInfo(byteSchema, request, fieldName)
+        if (fieldName!=null) {
+            byteSchema.name = fieldName
+            AnnoInfoAssemble.SchemaAnnoAssemble.assembleInfo(byteSchema, requestBody, fieldName)
+        }
         return byteSchema
     }
 

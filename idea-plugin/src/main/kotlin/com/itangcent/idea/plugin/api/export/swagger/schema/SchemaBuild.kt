@@ -4,7 +4,7 @@ import com.itangcent.common.model.Request
 import io.swagger.v3.oas.models.media.Schema
 
 interface SchemaBuild {
-    fun buildSchema(request: Request, fieldName:String): Schema<*>
+    fun buildSchema(requestBody:  LinkedHashMap<String, *>, fieldName:String?): Schema<*>
 
     fun getType(): Map<String, SchemaBuild>
 }
