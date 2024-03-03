@@ -6,7 +6,11 @@ import io.swagger.v3.core.util.PrimitiveType
 import io.swagger.v3.oas.models.media.Schema
 
 class LongSchemaBuild : SchemaBuild {
-    override fun buildSchema(requestBody:  LinkedHashMap<String, *>, fieldName: String?): Schema<*> {
+    override fun buildSchema(
+        requestBody: LinkedHashMap<String, *>,
+        fieldName: String?,
+        allObjMap: LinkedHashMap<String, Schema<*>>
+    ): Schema<*> {
         val longSchema = PrimitiveType.LONG.createProperty()
         if (fieldName!=null) {
             longSchema.name = fieldName
@@ -17,7 +21,7 @@ class LongSchemaBuild : SchemaBuild {
 
     override fun getType(): Map<String, SchemaBuild> {
         val map = mutableMapOf<String, SchemaBuild>()
-        map["Long"] = this
+        map["java.lang.Long"] = this
         map["long"] = this
         return map;
     }

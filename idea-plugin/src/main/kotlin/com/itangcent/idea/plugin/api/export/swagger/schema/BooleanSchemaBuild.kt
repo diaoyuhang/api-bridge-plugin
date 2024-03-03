@@ -6,7 +6,11 @@ import io.swagger.v3.core.util.PrimitiveType
 import io.swagger.v3.oas.models.media.Schema
 
 class BooleanSchemaBuild:SchemaBuild {
-    override fun buildSchema(requestBody:  LinkedHashMap<String, *>, fieldName: String?): Schema<*> {
+    override fun buildSchema(
+        requestBody: LinkedHashMap<String, *>,
+        fieldName: String?,
+        allObjMap: LinkedHashMap<String, Schema<*>>
+    ): Schema<*> {
         val booleanSchema = PrimitiveType.BOOLEAN.createProperty()
         if (fieldName != null) {
             booleanSchema.name = fieldName
@@ -18,7 +22,7 @@ class BooleanSchemaBuild:SchemaBuild {
     override fun getType(): Map<String, SchemaBuild> {
         val map = mutableMapOf<String, SchemaBuild>()
         map["boolean"] = this
-        map["Boolean"] = this
+        map["java.lang.Boolean"] = this
         return map
     }
 }

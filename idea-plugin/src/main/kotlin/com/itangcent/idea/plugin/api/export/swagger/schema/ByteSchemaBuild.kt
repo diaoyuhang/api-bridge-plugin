@@ -6,7 +6,11 @@ import io.swagger.v3.core.util.PrimitiveType
 import io.swagger.v3.oas.models.media.Schema
 
 class ByteSchemaBuild:SchemaBuild {
-    override fun buildSchema(requestBody:  LinkedHashMap<String, *>, fieldName: String?): Schema<*> {
+    override fun buildSchema(
+        requestBody: LinkedHashMap<String, *>,
+        fieldName: String?,
+        allObjMap: LinkedHashMap<String, Schema<*>>
+    ): Schema<*> {
         val byteSchema = PrimitiveType.BYTE.createProperty()
         if (fieldName!=null) {
             byteSchema.name = fieldName
@@ -18,7 +22,7 @@ class ByteSchemaBuild:SchemaBuild {
     override fun getType(): Map<String, SchemaBuild> {
         val map = mutableMapOf<String, SchemaBuild>()
         map["byte"] = this
-        map["Byte"] = this
+        map["java.lang.Byte"] = this
         return map
     }
 }

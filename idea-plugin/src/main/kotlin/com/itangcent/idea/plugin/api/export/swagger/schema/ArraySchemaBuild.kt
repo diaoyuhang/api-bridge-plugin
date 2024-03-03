@@ -8,11 +8,16 @@ import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
 
 class ArraySchemaBuild:SchemaBuild {
-    override fun buildSchema(requestBody:  LinkedHashMap<String, *>, fieldName: String?): Schema<*> {
+    override fun buildSchema(
+        requestBody: LinkedHashMap<String, *>,
+        fieldName: String?,
+        allObjMap: LinkedHashMap<String, Schema<*>>
+    ): Schema<*> {
         val arraySchema = ArraySchema()
         arraySchema.name = fieldName
         val fieldTypeMap = requestBody[Attrs.JAVA_TYPE_ATTR] as LinkedHashMap<String, String>
         val fieldType = fieldTypeMap[fieldName]
+
         if (fieldType!!.endsWith(SchemaBuildUtil.ARRAY_TYPE_SUFFIX)){
             val itemType = fieldType.subSequence(0, fieldType.length - 2)
             val typeSchemaBuild = SchemaBuildUtil.getTypeSchemaBuild(itemType.toString())
@@ -20,10 +25,10 @@ class ArraySchemaBuild:SchemaBuild {
             if (typeSchemaBuild is ObjectSchemaBuild){
 
                 val objectSchema = typeSchemaBuild.buildSchema(
-                    (requestBody[fieldName] as List<*>)[0] as LinkedHashMap<String, *>, null)
+                    (requestBody[fieldName] as List<*>)[0] as LinkedHashMap<String, *>, null,allObjMap)
                 arraySchema.items = objectSchema
             }else{
-                arraySchema.items = typeSchemaBuild.buildSchema(requestBody,null)
+                arraySchema.items = typeSchemaBuild.buildSchema(requestBody,null,allObjMap)
             }
         }else{
 
@@ -34,7 +39,7 @@ class ArraySchemaBuild:SchemaBuild {
     override fun getType(): Map<String, SchemaBuild> {
         val map = mutableMapOf<String, SchemaBuild>()
         map["[]"] = this
-        map["List"] = this
+        map["java.util.List"] = this
         return map
     }
 }

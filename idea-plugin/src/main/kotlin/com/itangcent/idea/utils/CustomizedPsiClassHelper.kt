@@ -89,9 +89,9 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
         val fieldPsi = accessibleField.psi
         fields[Attrs.CLASS_NAME_ATTR] = resourcePsiClass.psi().name
         fields[Attrs.QUALIFIED_CLASS_NAME_ATTR] = resourcePsiClass.psi().qualifiedName
-        fields.sub(Attrs.JAVA_TYPE_ATTR)[accessibleField.jsonFieldName()]=accessibleField.field!!.getType().name()
+        fields.sub(Attrs.JAVA_TYPE_ATTR)[accessibleField.jsonFieldName()]=accessibleField.type.canonicalText()
         apiAnnotationUtil.collectJsonBodyFieldAnnotationInfo(fields,fieldPsi as PsiFieldImpl)
-
+        accessibleField.type.canonicalText()
     }
 
     override fun resolveAdditionalField(

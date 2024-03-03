@@ -6,7 +6,11 @@ import io.swagger.v3.oas.models.media.MapSchema
 import io.swagger.v3.oas.models.media.Schema
 
 class MapSchemaBuild:SchemaBuild {
-    override fun buildSchema(requestBody:  LinkedHashMap<String, *>, fieldName: String?): Schema<*> {
+    override fun buildSchema(
+        requestBody: LinkedHashMap<String, *>,
+        fieldName: String?,
+        allObjMap: LinkedHashMap<String, Schema<*>>
+    ): Schema<*> {
         val mapSchema = MapSchema()
         if (fieldName!=null) {
             mapSchema.name = fieldName
@@ -17,7 +21,7 @@ class MapSchemaBuild:SchemaBuild {
 
     override fun getType(): Map<String, SchemaBuild> {
         val map = mutableMapOf<String, SchemaBuild>()
-        map["Map"] = this
+        map["java.util.Map"] = this
         return map
     }
 }

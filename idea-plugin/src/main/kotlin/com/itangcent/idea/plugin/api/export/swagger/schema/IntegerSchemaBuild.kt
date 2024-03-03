@@ -7,7 +7,11 @@ import io.swagger.v3.oas.models.media.IntegerSchema
 import io.swagger.v3.oas.models.media.Schema
 
 class IntegerSchemaBuild : SchemaBuild {
-    override fun buildSchema(requestBody:  LinkedHashMap<String, *>, fieldName: String?): Schema<*> {
+    override fun buildSchema(
+        requestBody: LinkedHashMap<String, *>,
+        fieldName: String?,
+        allObjMap: LinkedHashMap<String, Schema<*>>
+    ): Schema<*> {
         val IntegerSchema = PrimitiveType.INT.createProperty()
         if (fieldName!=null) {
             IntegerSchema.name = fieldName
@@ -18,7 +22,7 @@ class IntegerSchemaBuild : SchemaBuild {
 
     override fun getType(): Map<String, SchemaBuild> {
         val map = mutableMapOf<String, SchemaBuild>()
-        map["Integer"] = this
+        map["java.lang.Integer"] = this
         map["int"] = this
         return map;
     }
