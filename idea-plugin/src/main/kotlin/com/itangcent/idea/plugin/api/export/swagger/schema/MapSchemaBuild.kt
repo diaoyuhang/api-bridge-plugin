@@ -22,6 +22,7 @@ class MapSchemaBuild:SchemaBuild {
     override fun getType(): Map<String, SchemaBuild> {
         val map = mutableMapOf<String, SchemaBuild>()
         map["java.util.Map"] = this
+        map["java.lang.Object"] = this
         return map
     }
 }

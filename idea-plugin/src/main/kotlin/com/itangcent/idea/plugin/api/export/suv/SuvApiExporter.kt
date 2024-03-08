@@ -453,7 +453,7 @@ open class SuvApiExporter {
                             if (key.startsWith(Attrs.PREFIX)){
 
                             }else{
-                                properties[key] = SchemaBuildUtil.obtainTypeSchema(request, key, mutableMapOf())
+                                properties[key] = SchemaBuildUtil.obtainTypeSchema(request, key, linkedMapOf())
                             }
                         }
                     }
