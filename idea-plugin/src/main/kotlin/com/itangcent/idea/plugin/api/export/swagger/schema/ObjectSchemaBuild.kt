@@ -1,9 +1,10 @@
 package com.itangcent.idea.plugin.api.export.swagger.schema
 
 import com.itangcent.common.constant.Attrs
-import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.api.export.swagger.SchemaBuildUtil
 import io.swagger.v3.core.util.PrimitiveType
+import io.swagger.v3.oas.models.Components
+import io.swagger.v3.oas.models.media.ObjectSchema
 import io.swagger.v3.oas.models.media.Schema
 
 class ObjectSchemaBuild : SchemaBuild {
@@ -12,7 +13,7 @@ class ObjectSchemaBuild : SchemaBuild {
         fieldName: String?,
         allObjMap: LinkedHashMap<String, Schema<*>>
     ): Schema<*> {
-        val objectSchema = PrimitiveType.OBJECT.createProperty()
+        val objectSchema = ObjectSchema()
         val require = requestBody[Attrs.REQUIRED_ATTR] as LinkedHashMap<String, Boolean>
         objectSchema.required = require.filter { it.value }.map { it.key }
         objectSchema.name = requestBody[Attrs.QUALIFIED_CLASS_NAME_ATTR] as String
@@ -24,7 +25,14 @@ class ObjectSchemaBuild : SchemaBuild {
             if (key.startsWith(Attrs.PREFIX)){
                 continue
             }else{
-                properties[key] = SchemaBuildUtil.obtainTypeSchema(requestBody, key, allObjMap)
+                val schema = SchemaBuildUtil.obtainTypeSchema(requestBody, key, allObjMap)
+                if(schema is ObjectSchema){
+                    val refSchema = Schema<Any>()
+                    refSchema.`$ref` = Components.COMPONENTS_SCHEMAS_REF + objectSchema.name
+                    properties[key] = refSchema
+                }else{
+                    properties[key] = schema
+                }
             }
         }
         return objectSchema

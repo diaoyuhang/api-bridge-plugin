@@ -4,6 +4,7 @@ import com.itangcent.common.constant.Attrs
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.api.export.swagger.schema.*
 import com.itangcent.idea.plugin.api.export.swagger.schema.ObjectSchemaBuild
+import io.swagger.v3.oas.models.Components
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
 
@@ -36,13 +37,21 @@ object SchemaBuildUtil {
             val arraySchema = ArraySchema()
             val objectSchemaBuild = getTypeSchemaBuild("object")
             val linkedHashMap = (request.body as ArrayList<*>)[0] as LinkedHashMap<String, *>
-            arraySchema.items = objectSchemaBuild.buildSchema(linkedHashMap, null, allObjMap)
+            val objSchema = objectSchemaBuild.buildSchema(linkedHashMap, null, allObjMap)
+            val schema = Schema<Any>()
+            schema.`$ref` = Components.COMPONENTS_SCHEMAS_REF + objSchema.name
+            arraySchema.items = schema
             return arraySchema
         }
-        val fieldTypeMap = body[Attrs.JAVA_TYPE_ATTR]?.let { it as LinkedHashMap<String, String> } ?: linkedMapOf()
-        val fieldType = fieldTypeMap[fieldName] as String
-        val schemaBuild = getTypeSchemaBuild(fieldType)
-        return schemaBuild.buildSchema(body, fieldName, allObjMap)
+        val objectSchemaBuild = getTypeSchemaBuild("object")
+        val objSchema = objectSchemaBuild.buildSchema(body, null, allObjMap)
+        val schema = Schema<Any>()
+        schema.`$ref` = Components.COMPONENTS_SCHEMAS_REF + objSchema.name
+        return schema
+//        val fieldTypeMap = body[Attrs.JAVA_TYPE_ATTR]?.let { it as LinkedHashMap<String, String> } ?: linkedMapOf()
+//        val fieldType = fieldTypeMap[fieldName] as String
+//        val schemaBuild = getTypeSchemaBuild(fieldType)
+//        return schemaBuild.buildSchema(body, fieldName, allObjMap)
     }
 
     fun obtainTypeSchema(
@@ -54,14 +63,25 @@ object SchemaBuildUtil {
             requestBody[Attrs.JAVA_TYPE_ATTR]?.let { it as LinkedHashMap<String, String> } ?: linkedMapOf()
         val fieldType = fieldTypeMap[fieldName] as String
         val schemaBuild = getTypeSchemaBuild(fieldType)
-        return schemaBuild.buildSchema(requestBody, fieldName, allObjMap)
+        var body = requestBody
+        if(schemaBuild is ObjectSchemaBuild){
+            body = requestBody[fieldName] as LinkedHashMap<String, *>
+        }
+
+        return schemaBuild.buildSchema(body, fieldName, allObjMap)
     }
 
     fun getTypeSchemaBuild(fieldType: String): SchemaBuild {
         return typeSchemaBuildMap[fieldType]
             ?: run {
-                if (fieldType.endsWith(ARRAY_TYPE_SUFFIX)) {
+                if (fieldType.endsWith(ARRAY_TYPE_SUFFIX)||fieldType.startsWith("java.util.List")) {
                     typeSchemaBuildMap[ARRAY_TYPE_SUFFIX]
+                } else if (fieldType.startsWith("java.util.Map")||
+                    fieldType.startsWith("java.lang.Object")||
+                    fieldType.startsWith("java.util.HashMap")||
+                    fieldType.startsWith("com.google.gson.JsonObject")||
+                    fieldType.startsWith("com.alibaba.fastjson2.JSONObject")){
+                    typeSchemaBuildMap["java.util.Map"]
                 } else {
                     null
                 }

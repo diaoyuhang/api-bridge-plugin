@@ -23,6 +23,8 @@ class MapSchemaBuild:SchemaBuild {
         val map = mutableMapOf<String, SchemaBuild>()
         map["java.util.Map"] = this
         map["java.lang.Object"] = this
+        map["com.google.gson.JsonObject"] = this
+        map["com.alibaba.fastjson2.JSONObject"] = this
         return map
     }
 }

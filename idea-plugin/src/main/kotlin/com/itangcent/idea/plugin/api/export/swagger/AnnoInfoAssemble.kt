@@ -11,13 +11,13 @@ class AnnoInfoAssemble {
 
     object SchemaAnnoAssemble {
         fun assembleInfo(schema: Schema<*>, body:  LinkedHashMap<String, *>, fieldName:String) {
-            val schemaAnnoInfo = body.get(Attrs.SCHEMA_ATTR)?.let { it as? LinkedHashMap<String, *> }
-            schema.description = schemaAnnoInfo?.get(fieldName)?.getPropertyValue("description") as? String
+            val schemaAnnoInfo = body[Attrs.SCHEMA_ATTR]?.let { it as? LinkedHashMap<String, LinkedHashMap<String,*>> }
+            schema.description = schemaAnnoInfo?.get(fieldName)?.get("description") as? String
 
-            val minAnnoInfo = body[Attrs.MIN_ATTR]?.let { it as? LinkedHashMap<String, *> }
-            val maxAnnoInfo = body[Attrs.MAX_ATTR]?.let { it as? LinkedHashMap<String, *> }
-            val minValue: Int? = minAnnoInfo?.get(fieldName)?.getPropertyValue("value") as? Int
-            val maxValue: Int? = maxAnnoInfo?.get(fieldName)?.getPropertyValue("value") as? Int
+            val minAnnoInfo = body[Attrs.MIN_ATTR]?.let { it as? LinkedHashMap<String, LinkedHashMap<String,*>> }
+            val maxAnnoInfo = body[Attrs.MAX_ATTR]?.let { it as? LinkedHashMap<String, LinkedHashMap<String,*>> }
+            val minValue: Int? = minAnnoInfo?.get(fieldName)?.get("value") as? Int
+            val maxValue: Int? = maxAnnoInfo?.get(fieldName)?.get("value") as? Int
             if (minValue != null) {
                 schema.minimum = BigDecimal(minValue)
             }
@@ -25,9 +25,9 @@ class AnnoInfoAssemble {
                 schema.maximum = BigDecimal(maxValue)
             }
 
-            val sizeAnnoInfo = body[Attrs.SIZE_ATTR]?.let { it as? LinkedHashMap<String, *> }
-            val minSizeValue: Int? = sizeAnnoInfo?.get(fieldName)?.getPropertyValue("min") as? Int
-            val maxSizeValue: Int? = sizeAnnoInfo?.get(fieldName)?.getPropertyValue("max") as? Int
+            val sizeAnnoInfo = body[Attrs.SIZE_ATTR]?.let { it as? LinkedHashMap<String, LinkedHashMap<String,*>> }
+            val minSizeValue: Int? = sizeAnnoInfo?.get(fieldName)?.get("min") as? Int
+            val maxSizeValue: Int? = sizeAnnoInfo?.get(fieldName)?.get("max") as? Int
             if (minSizeValue != null) {
                 schema.minLength = minSizeValue
             }

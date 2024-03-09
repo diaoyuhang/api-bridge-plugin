@@ -1,39 +1,78 @@
 package com.itangcent.idea.plugin.api.export.swagger.schema
 
 import com.itangcent.common.constant.Attrs
-import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.api.export.swagger.SchemaBuildUtil
-import io.swagger.v3.core.util.PrimitiveType
+import com.jetbrains.rd.generator.nova.PredefinedType
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
 
-class ArraySchemaBuild:SchemaBuild {
+class ArraySchemaBuild : SchemaBuild {
+
+    val LIST_STRING = "java.util.List"
     override fun buildSchema(
         requestBody: LinkedHashMap<String, *>,
         fieldName: String?,
         allObjMap: LinkedHashMap<String, Schema<*>>
     ): Schema<*> {
-        val arraySchema = ArraySchema()
-        arraySchema.name = fieldName
         val fieldTypeMap = requestBody[Attrs.JAVA_TYPE_ATTR] as LinkedHashMap<String, String>
         val fieldType = fieldTypeMap[fieldName]
-
-        if (fieldType!!.endsWith(SchemaBuildUtil.ARRAY_TYPE_SUFFIX)){
-            val itemType = fieldType.subSequence(0, fieldType.length - 2)
-            val typeSchemaBuild = SchemaBuildUtil.getTypeSchemaBuild(itemType.toString())
-
-            if (typeSchemaBuild is ObjectSchemaBuild){
-
-                val objectSchema = typeSchemaBuild.buildSchema(
-                    (requestBody[fieldName] as List<*>)[0] as LinkedHashMap<String, *>, null,allObjMap)
-                arraySchema.items = objectSchema
-            }else{
-                arraySchema.items = typeSchemaBuild.buildSchema(requestBody,null,allObjMap)
+        val arraySchema = assembleSchema(fieldType!!, requestBody, fieldName, allObjMap) {
+            var paramBody = requestBody[fieldName]
+            while (paramBody is ArrayList<*>) {
+                paramBody = paramBody[0]
             }
-        }else{
-
+            paramBody as LinkedHashMap<String, *>
         }
+
         return arraySchema
+    }
+
+    private fun assembleSchema(
+        fieldType: String,
+        requestBody: LinkedHashMap<String, *>,
+        fieldName: String?,
+        allObjMap: LinkedHashMap<String, Schema<*>>,
+        handle : ()-> LinkedHashMap<String, *>
+    ): ArraySchema {
+        val arraySchema = ArraySchema()
+        arraySchema.name = fieldName
+
+        if (fieldType.endsWith(SchemaBuildUtil.ARRAY_TYPE_SUFFIX)) {
+            val itemType = fieldType.subSequence(0, fieldType.length - 2)
+            doAssemble(itemType, arraySchema, requestBody, allObjMap, fieldName,handle)
+        } else if (fieldType.endsWith(Attrs.GT)) {
+            val firstIndex = fieldType.indexOfFirst { ch -> ch.toString() == Attrs.LT }
+            var itemType = fieldType.subSequence(firstIndex + 1, fieldType.length - 1).toString()
+            if (itemType == "*") {
+                itemType = "java.lang.Object"
+            }
+            doAssemble(itemType, arraySchema, requestBody, allObjMap, fieldName,handle)
+        }
+
+        return arraySchema
+    }
+
+    private fun doAssemble(
+        itemType: CharSequence,
+        arraySchema: ArraySchema,
+        requestBody: LinkedHashMap<String, *>,
+        allObjMap: LinkedHashMap<String, Schema<*>>,
+        fieldName: String?,
+        handle : ()-> LinkedHashMap<String, *>
+    ) {
+        if (itemType.endsWith(SchemaBuildUtil.ARRAY_TYPE_SUFFIX)) {
+            arraySchema.items = assembleSchema(itemType.toString(), requestBody, null, allObjMap,handle)
+        } else if (itemType.startsWith(LIST_STRING)) {
+            arraySchema.items = assembleSchema(itemType.toString(), requestBody, null, allObjMap,handle)
+        } else {
+            val typeSchemaBuild = SchemaBuildUtil.getTypeSchemaBuild(itemType.toString())
+            if (typeSchemaBuild is ObjectSchemaBuild) {
+                val paramBody = handle()
+                arraySchema.items = typeSchemaBuild.buildSchema(paramBody, null, allObjMap)
+            } else {
+                arraySchema.items = typeSchemaBuild.buildSchema(requestBody, null, allObjMap)
+            }
+        }
     }
 
     override fun getType(): Map<String, SchemaBuild> {

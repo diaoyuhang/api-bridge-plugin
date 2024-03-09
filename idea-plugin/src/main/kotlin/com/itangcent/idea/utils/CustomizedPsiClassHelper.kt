@@ -90,8 +90,9 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
         fields[Attrs.CLASS_NAME_ATTR] = resourcePsiClass.psi().name
         fields[Attrs.QUALIFIED_CLASS_NAME_ATTR] = resourcePsiClass.psi().qualifiedName
         fields.sub(Attrs.JAVA_TYPE_ATTR)[accessibleField.jsonFieldName()]=accessibleField.type.canonicalText()
-        apiAnnotationUtil.collectJsonBodyFieldAnnotationInfo(fields,fieldPsi as PsiFieldImpl)
-        accessibleField.type.canonicalText()
+        if(fieldPsi is PsiFieldImpl) {
+            apiAnnotationUtil.collectJsonBodyFieldAnnotationInfo(fields, fieldPsi)
+        }
     }
 
     override fun resolveAdditionalField(

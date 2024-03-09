@@ -12,6 +12,9 @@ object Attrs {
 
     const val PREFIX = "@"
 
+    const val LT="<"
+    const val GT=">"
+
     const val CLASS_NAME_ATTR = "@ClassName"
     const val QUALIFIED_CLASS_NAME_ATTR = "@QualifiedClassName"
 
