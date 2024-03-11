@@ -2,7 +2,6 @@ package com.itangcent.idea.plugin.api.export.swagger.schema
 
 import com.itangcent.common.constant.Attrs
 import com.itangcent.idea.plugin.api.export.swagger.SchemaBuildUtil
-import com.jetbrains.rd.generator.nova.PredefinedType
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
 
@@ -37,7 +36,7 @@ class ArraySchemaBuild : SchemaBuild {
         val arraySchema = ArraySchema()
         arraySchema.name = fieldName
 
-        if (fieldType.endsWith(SchemaBuildUtil.ARRAY_TYPE_SUFFIX)) {
+        if (fieldType.endsWith(Attrs.ARRAY_TYPE_SUFFIX)) {
             val itemType = fieldType.subSequence(0, fieldType.length - 2)
             doAssemble(itemType, arraySchema, requestBody, allObjMap,handle)
         } else if (fieldType.endsWith(Attrs.GT)) {
@@ -56,7 +55,7 @@ class ArraySchemaBuild : SchemaBuild {
         allObjMap: LinkedHashMap<String, Schema<*>>,
         handle : ()-> LinkedHashMap<String, *>
     ) {
-        if (itemType.endsWith(SchemaBuildUtil.ARRAY_TYPE_SUFFIX)) {
+        if (itemType.endsWith(Attrs.ARRAY_TYPE_SUFFIX)) {
             arraySchema.items = assembleSchema(itemType.toString(), requestBody, null, allObjMap,handle)
         } else if (itemType.startsWith(LIST_STRING)) {
             arraySchema.items = assembleSchema(itemType.toString(), requestBody, null, allObjMap,handle)

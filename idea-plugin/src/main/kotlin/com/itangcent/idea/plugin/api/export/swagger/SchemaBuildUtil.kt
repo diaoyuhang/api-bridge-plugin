@@ -10,7 +10,6 @@ import io.swagger.v3.oas.models.media.Schema
 
 object SchemaBuildUtil {
     private val typeSchemaBuildMap = mutableMapOf<String, SchemaBuild>()
-    const val ARRAY_TYPE_SUFFIX = "[]"
 
     init {
         typeSchemaBuildMap.putAll(StringSchemaBuild().getType())
@@ -75,8 +74,8 @@ object SchemaBuildUtil {
     fun getTypeSchemaBuild(fieldType: String): SchemaBuild {
         return typeSchemaBuildMap[fieldType]
             ?: run {
-                if (fieldType.endsWith(ARRAY_TYPE_SUFFIX)||fieldType.startsWith("java.util.List")) {
-                    typeSchemaBuildMap[ARRAY_TYPE_SUFFIX]
+                if (fieldType.endsWith(Attrs.ARRAY_TYPE_SUFFIX)||fieldType.startsWith("java.util.List")) {
+                    typeSchemaBuildMap[Attrs.ARRAY_TYPE_SUFFIX]
                 } else if (fieldType.startsWith("java.util.Map")||
                     fieldType.startsWith("java.util.HashMap")||
                     fieldType.startsWith("com.google.gson.JsonObject")||

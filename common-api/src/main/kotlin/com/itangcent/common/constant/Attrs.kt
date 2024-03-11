@@ -14,6 +14,7 @@ object Attrs {
 
     const val LT="<"
     const val GT=">"
+    const val ARRAY_TYPE_SUFFIX = "[]"
 
     const val COMMA=","
 
