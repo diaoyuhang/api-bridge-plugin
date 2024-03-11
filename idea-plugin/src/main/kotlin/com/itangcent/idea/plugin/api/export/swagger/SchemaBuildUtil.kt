@@ -23,6 +23,7 @@ object SchemaBuildUtil {
         typeSchemaBuildMap.putAll(LongSchemaBuild().getType())
         typeSchemaBuildMap.putAll(ArraySchemaBuild().getType())
         typeSchemaBuildMap.putAll(MapSchemaBuild().getType())
+        typeSchemaBuildMap.putAll(SchemaObjectBuild().getType())
 
     }
 
@@ -77,7 +78,6 @@ object SchemaBuildUtil {
                 if (fieldType.endsWith(ARRAY_TYPE_SUFFIX)||fieldType.startsWith("java.util.List")) {
                     typeSchemaBuildMap[ARRAY_TYPE_SUFFIX]
                 } else if (fieldType.startsWith("java.util.Map")||
-                    fieldType.startsWith("java.lang.Object")||
                     fieldType.startsWith("java.util.HashMap")||
                     fieldType.startsWith("com.google.gson.JsonObject")||
                     fieldType.startsWith("com.alibaba.fastjson2.JSONObject")){

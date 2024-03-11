@@ -15,6 +15,8 @@ object Attrs {
     const val LT="<"
     const val GT=">"
 
+    const val COMMA=","
+
     const val CLASS_NAME_ATTR = "@ClassName"
     const val QUALIFIED_CLASS_NAME_ATTR = "@QualifiedClassName"
 

@@ -39,14 +39,11 @@ class ArraySchemaBuild : SchemaBuild {
 
         if (fieldType.endsWith(SchemaBuildUtil.ARRAY_TYPE_SUFFIX)) {
             val itemType = fieldType.subSequence(0, fieldType.length - 2)
-            doAssemble(itemType, arraySchema, requestBody, allObjMap, fieldName,handle)
+            doAssemble(itemType, arraySchema, requestBody, allObjMap,handle)
         } else if (fieldType.endsWith(Attrs.GT)) {
             val firstIndex = fieldType.indexOfFirst { ch -> ch.toString() == Attrs.LT }
             var itemType = fieldType.subSequence(firstIndex + 1, fieldType.length - 1).toString()
-            if (itemType == "*") {
-                itemType = "java.lang.Object"
-            }
-            doAssemble(itemType, arraySchema, requestBody, allObjMap, fieldName,handle)
+            doAssemble(itemType, arraySchema, requestBody, allObjMap,handle)
         }
 
         return arraySchema
@@ -57,7 +54,6 @@ class ArraySchemaBuild : SchemaBuild {
         arraySchema: ArraySchema,
         requestBody: LinkedHashMap<String, *>,
         allObjMap: LinkedHashMap<String, Schema<*>>,
-        fieldName: String?,
         handle : ()-> LinkedHashMap<String, *>
     ) {
         if (itemType.endsWith(SchemaBuildUtil.ARRAY_TYPE_SUFFIX)) {
