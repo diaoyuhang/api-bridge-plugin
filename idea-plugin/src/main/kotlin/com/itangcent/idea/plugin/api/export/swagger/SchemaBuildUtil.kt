@@ -3,7 +3,7 @@ package com.itangcent.idea.plugin.api.export.swagger
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.api.export.swagger.schema.*
-import com.itangcent.idea.plugin.api.export.swagger.schema.ObjectSchemaBuild
+import com.itangcent.idea.plugin.api.export.swagger.schema.CustomObjSchemaBuild
 import io.swagger.v3.oas.models.Components
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema
@@ -22,7 +22,7 @@ object SchemaBuildUtil {
         typeSchemaBuildMap.putAll(LongSchemaBuild().getType())
         typeSchemaBuildMap.putAll(ArraySchemaBuild().getType())
         typeSchemaBuildMap.putAll(MapSchemaBuild().getType())
-        typeSchemaBuildMap.putAll(SchemaObjectBuild().getType())
+        typeSchemaBuildMap.putAll(ObjectSchemaBuild().getType())
 
     }
 
@@ -64,7 +64,7 @@ object SchemaBuildUtil {
         val fieldType = fieldTypeMap[fieldName] as String
         val schemaBuild = getTypeSchemaBuild(fieldType)
         var body = requestBody
-        if(schemaBuild is ObjectSchemaBuild){
+        if(schemaBuild is CustomObjSchemaBuild){
             body = requestBody[fieldName] as LinkedHashMap<String, *>
         }
 
@@ -85,6 +85,6 @@ object SchemaBuildUtil {
                     null
                 }
             }
-            ?: ObjectSchemaBuild()
+            ?: CustomObjSchemaBuild()
     }
 }

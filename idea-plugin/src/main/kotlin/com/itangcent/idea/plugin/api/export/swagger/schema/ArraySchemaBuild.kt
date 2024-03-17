@@ -61,7 +61,7 @@ class ArraySchemaBuild : SchemaBuild {
             arraySchema.items = assembleSchema(itemType.toString(), requestBody, null, allObjMap,handle)
         } else {
             val typeSchemaBuild = SchemaBuildUtil.getTypeSchemaBuild(itemType.toString())
-            if (typeSchemaBuild is ObjectSchemaBuild) {
+            if (typeSchemaBuild is CustomObjSchemaBuild) {
                 val paramBody = handle()
                 arraySchema.items = typeSchemaBuild.buildSchema(paramBody, null, allObjMap)
             } else {
