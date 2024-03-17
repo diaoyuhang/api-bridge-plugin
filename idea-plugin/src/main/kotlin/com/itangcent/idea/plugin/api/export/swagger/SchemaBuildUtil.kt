@@ -37,14 +37,14 @@ object SchemaBuildUtil {
             val arraySchema = ArraySchema()
             val objectSchemaBuild = getTypeSchemaBuild("object")
             val linkedHashMap = (request.body as ArrayList<*>)[0] as LinkedHashMap<String, *>
-            val objSchema = objectSchemaBuild.buildSchema(linkedHashMap, null, allObjMap)
+            val objSchema = objectSchemaBuild.buildSchema(linkedHashMap, null, allObjMap, null)
             val schema = Schema<Any>()
             schema.`$ref` = Components.COMPONENTS_SCHEMAS_REF + objSchema.name
             arraySchema.items = schema
             return arraySchema
         }
         val objectSchemaBuild = getTypeSchemaBuild("object")
-        val objSchema = objectSchemaBuild.buildSchema(body, null, allObjMap)
+        val objSchema = objectSchemaBuild.buildSchema(body, null, allObjMap, null)
         val schema = Schema<Any>()
         schema.`$ref` = Components.COMPONENTS_SCHEMAS_REF + objSchema.name
         return schema
@@ -68,7 +68,7 @@ object SchemaBuildUtil {
             body = requestBody[fieldName] as LinkedHashMap<String, *>
         }
 
-        return schemaBuild.buildSchema(body, fieldName, allObjMap)
+        return schemaBuild.buildSchema(body, fieldName, allObjMap, fieldType)
     }
 
     fun getTypeSchemaBuild(fieldType: String): SchemaBuild {

@@ -1,14 +1,14 @@
 package com.itangcent.idea.plugin.api.export.swagger.schema
 
-import com.itangcent.common.model.Request
 import io.swagger.v3.core.util.PrimitiveType
 import io.swagger.v3.oas.models.media.Schema
 
 class FloatSchemaBuild:SchemaBuild {
     override fun buildSchema(
-        requestBody: LinkedHashMap<String, *>,
+        requestBody: Any,
         fieldName: String?,
-        allObjMap: LinkedHashMap<String, Schema<*>>
+        allObjMap: LinkedHashMap<String, Schema<*>>,
+        fieldType: String?
     ): Schema<*> {
         val floatSchema = PrimitiveType.FLOAT.createProperty()
 

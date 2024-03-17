@@ -6,14 +6,15 @@ import io.swagger.v3.oas.models.media.Schema
 
 class IntegerSchemaBuild : SchemaBuild {
     override fun buildSchema(
-        requestBody: LinkedHashMap<String, *>,
+        requestBody: Any,
         fieldName: String?,
-        allObjMap: LinkedHashMap<String, Schema<*>>
+        allObjMap: LinkedHashMap<String, Schema<*>>,
+        fieldType: String?
     ): Schema<*> {
         val integerSchema = PrimitiveType.INT.createProperty()
         if (fieldName!=null) {
             integerSchema.name = fieldName
-            AnnoInfoAssemble.SchemaAnnoAssemble.assembleInfo(integerSchema, requestBody, fieldName)
+            AnnoInfoAssemble.SchemaAnnoAssemble.assembleInfo(integerSchema, requestBody as LinkedHashMap<String, *>, fieldName)
         }
         return integerSchema
     }

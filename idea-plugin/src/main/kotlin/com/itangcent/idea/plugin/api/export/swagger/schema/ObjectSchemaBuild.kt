@@ -6,9 +6,10 @@ import io.swagger.v3.oas.models.media.Schema
 class ObjectSchemaBuild:SchemaBuild {
     private val objSchema = PrimitiveType.OBJECT.createProperty()
     override fun buildSchema(
-        requestBody: LinkedHashMap<String, *>,
+        requestBody: Any,
         fieldName: String?,
-        allObjMap: LinkedHashMap<String, Schema<*>>
+        allObjMap: LinkedHashMap<String, Schema<*>>,
+        fieldType: String?
     ): Schema<*> {
         return objSchema
     }

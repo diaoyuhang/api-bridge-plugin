@@ -7,66 +7,37 @@ import io.swagger.v3.oas.models.media.Schema
 
 class ArraySchemaBuild : SchemaBuild {
 
-    val LIST_STRING = "java.util.List"
     override fun buildSchema(
-        requestBody: LinkedHashMap<String, *>,
+        requestBody: Any,
         fieldName: String?,
-        allObjMap: LinkedHashMap<String, Schema<*>>
+        allObjMap: LinkedHashMap<String, Schema<*>>,
+        fieldType: String?
     ): Schema<*> {
-        val fieldTypeMap = requestBody[Attrs.JAVA_TYPE_ATTR] as LinkedHashMap<String, String>
-        val fieldType = fieldTypeMap[fieldName]
-        val arraySchema = assembleSchema(fieldType!!, requestBody, fieldName, allObjMap) {
-            var paramBody = requestBody[fieldName]
-            while (paramBody is ArrayList<*>) {
-                paramBody = paramBody[0]
-            }
-            paramBody as LinkedHashMap<String, *>
+        val arraySchema = ArraySchema()
+        if(fieldName!=null) {
+            arraySchema.name = fieldName
         }
+
+        arraySchema.items = assembleSchema(fieldType!!, requestBody as List<LinkedHashMap<String, *>>, allObjMap)
 
         return arraySchema
     }
 
     private fun assembleSchema(
         fieldType: String,
-        requestBody: LinkedHashMap<String, *>,
-        fieldName: String?,
-        allObjMap: LinkedHashMap<String, Schema<*>>,
-        handle : ()-> LinkedHashMap<String, *>
-    ): ArraySchema {
-        val arraySchema = ArraySchema()
-        arraySchema.name = fieldName
+        requestBody: List<LinkedHashMap<String, *>>,
+        allObjMap: LinkedHashMap<String, Schema<*>>
+    ): Schema<*> {
 
         if (fieldType.endsWith(Attrs.ARRAY_TYPE_SUFFIX)) {
-            val itemType = fieldType.subSequence(0, fieldType.length - 2)
-            doAssemble(itemType, arraySchema, requestBody, allObjMap,handle)
+            val itemType = fieldType.subSequence(0, fieldType.length - 2).toString()
+            return SchemaBuildUtil.getTypeSchemaBuild(itemType).buildSchema(requestBody[0],null,allObjMap,itemType)
         } else if (fieldType.endsWith(Attrs.GT)) {
             val firstIndex = fieldType.indexOfFirst { ch -> ch.toString() == Attrs.LT }
-            var itemType = fieldType.subSequence(firstIndex + 1, fieldType.length - 1).toString()
-            doAssemble(itemType, arraySchema, requestBody, allObjMap,handle)
-        }
-
-        return arraySchema
-    }
-
-    private fun doAssemble(
-        itemType: CharSequence,
-        arraySchema: ArraySchema,
-        requestBody: LinkedHashMap<String, *>,
-        allObjMap: LinkedHashMap<String, Schema<*>>,
-        handle : ()-> LinkedHashMap<String, *>
-    ) {
-        if (itemType.endsWith(Attrs.ARRAY_TYPE_SUFFIX)) {
-            arraySchema.items = assembleSchema(itemType.toString(), requestBody, null, allObjMap,handle)
-        } else if (itemType.startsWith(LIST_STRING)) {
-            arraySchema.items = assembleSchema(itemType.toString(), requestBody, null, allObjMap,handle)
-        } else {
-            val typeSchemaBuild = SchemaBuildUtil.getTypeSchemaBuild(itemType.toString())
-            if (typeSchemaBuild is CustomObjSchemaBuild) {
-                val paramBody = handle()
-                arraySchema.items = typeSchemaBuild.buildSchema(paramBody, null, allObjMap)
-            } else {
-                arraySchema.items = typeSchemaBuild.buildSchema(requestBody, null, allObjMap)
-            }
+            val itemType = fieldType.subSequence(firstIndex + 1, fieldType.length - 1).toString()
+            return SchemaBuildUtil.getTypeSchemaBuild(itemType).buildSchema(requestBody[0],null,allObjMap,itemType)
+        }else{
+            return SchemaBuildUtil.getTypeSchemaBuild("*").buildSchema(requestBody,null,allObjMap,null)
         }
     }
 

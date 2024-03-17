@@ -8,10 +8,17 @@ import io.swagger.v3.oas.models.media.Schema
 
 class CustomObjSchemaBuild : SchemaBuild {
     override fun buildSchema(
-        requestBody: LinkedHashMap<String, *>,
+        requestBody: Any,
         fieldName: String?,
-        allObjMap: LinkedHashMap<String, Schema<*>>
+        allObjMap: LinkedHashMap<String, Schema<*>>,
+        fieldType: String?
     ): Schema<*> {
+        val requestBody = requestBody as LinkedHashMap<String, *>
+        val customObj = allObjMap[requestBody[Attrs.QUALIFIED_CLASS_NAME_ATTR]]
+        if(customObj!=null){
+            return customObj
+        }
+
         val objectSchema = ObjectSchema()
         val require = requestBody[Attrs.REQUIRED_ATTR] as LinkedHashMap<String, Boolean>
         objectSchema.required = require.filter { it.value }.map { it.key }
