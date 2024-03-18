@@ -11,7 +11,6 @@ import com.itangcent.common.model.Doc
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.filterAs
-import com.itangcent.common.utils.getPropertyValue
 import com.itangcent.debug.LoggerCollector
 import com.itangcent.idea.config.CachedResourceResolver
 import com.itangcent.idea.plugin.api.ClassApiExporterHelper
@@ -56,22 +55,18 @@ import com.itangcent.intellij.util.UIUtils
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import com.itangcent.suv.http.HttpClientProvider
 import com.itangcent.utils.GitUtils
-import io.swagger.v3.core.util.PrimitiveType
-import io.swagger.v3.oas.models.Components
-import io.swagger.v3.oas.models.OpenAPI
-import io.swagger.v3.oas.models.Operation
-import io.swagger.v3.oas.models.Paths
+import io.swagger.v3.oas.models.*
 import io.swagger.v3.oas.models.info.Info
 import io.swagger.v3.oas.models.media.Schema
-import io.swagger.v3.oas.models.media.StringSchema
 import io.swagger.v3.oas.models.responses.ApiResponse
 import io.swagger.v3.oas.models.responses.ApiResponses
 import io.swagger.v3.oas.models.tags.Tag
 import org.apache.commons.lang3.StringUtils
 import org.springdoc.core.Constants
+import org.springdoc.core.SpringDocConfigProperties
+import org.springdoc.core.providers.ObjectMapperProvider
 import java.lang.annotation.ElementType
 import java.util.*
-import kotlin.collections.LinkedHashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
 
@@ -441,9 +436,6 @@ open class SuvApiExporter {
                         operation.description = operationInfo["description"] as? String
 
                     }
-                    val allSchema = linkedMapOf<String, Schema<*>>()
-                    //构建schema
-                    var obtainTypeSchema = SchemaBuildUtil.obtainTypeSchema(request.body, allSchema)
 
                     if(classAnnoInfo.contains(Attrs.TAG_ATTR)){
                         val tagInfo = classAnnoInfo[Attrs.TAG_ATTR] as Map<*,*>
@@ -476,12 +468,30 @@ open class SuvApiExporter {
                             apiResponses.addApiResponse(httpCode,apiResponse)
                         }
                     }
+
+                    val allSchema = linkedMapOf<String, Schema<*>>()
+                    //构建schema
+                    var obtainTypeSchema = SchemaBuildUtil.obtainTypeSchema(request.body, allSchema)
+//                    operation.requestBody = obtainTypeSchema
+                    val components: Components = openApi.components
+                    val paths: Paths = openApi.paths
+                    components.schemas=allSchema
+                    val pathItemObject = PathItem();
+                    pathItemObject.post=operation
+                    paths.addPathItem("",pathItemObject)
+
                 }
             } catch (e: Exception) {
                 logger!!.traceError("get project git branch fail",e)
             }
         }
 
+        private fun writeJson(openAPI: OpenAPI):String{
+            val springDocConfigProperties = SpringDocConfigProperties()
+            val objectMapperProvider = ObjectMapperProvider(springDocConfigProperties);
+
+            return objectMapperProvider.jsonMapper().writerFor(openAPI.javaClass).writeValueAsString(openAPI)
+        }
         private fun buildOpenApi(): OpenAPI {
             val openApi = OpenAPI()
             openApi.components = Components()
