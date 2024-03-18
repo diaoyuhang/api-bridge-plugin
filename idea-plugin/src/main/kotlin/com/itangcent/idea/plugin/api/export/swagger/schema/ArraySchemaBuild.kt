@@ -17,15 +17,23 @@ class ArraySchemaBuild : SchemaBuild {
         if(fieldName!=null) {
             arraySchema.name = fieldName
         }
+        val body = if (requestBody is LinkedHashMap<*, *>) {
+            (requestBody as LinkedHashMap<String, *>)[fieldName] as List<Any>
+        } else {
+            requestBody as List<Any>
+        }
 
-        arraySchema.items = assembleSchema(fieldType!!, requestBody as List<LinkedHashMap<String, *>>, allObjMap)
-
+        arraySchema.items = if(fieldType!=null) {
+             assembleSchema(fieldType, body, allObjMap)
+        }else{
+             SchemaBuildUtil.obtainTypeSchema(body[0],allObjMap)
+        }
         return arraySchema
     }
 
     private fun assembleSchema(
         fieldType: String,
-        requestBody: List<LinkedHashMap<String, *>>,
+        requestBody: List<Any>,
         allObjMap: LinkedHashMap<String, Schema<*>>
     ): Schema<*> {
 
@@ -34,10 +42,19 @@ class ArraySchemaBuild : SchemaBuild {
             return SchemaBuildUtil.getTypeSchemaBuild(itemType).buildSchema(requestBody[0],null,allObjMap,itemType)
         } else if (fieldType.endsWith(Attrs.GT)) {
             val firstIndex = fieldType.indexOfFirst { ch -> ch.toString() == Attrs.LT }
-            val itemType = fieldType.subSequence(firstIndex + 1, fieldType.length - 1).toString()
+            var itemType = fieldType.subSequence(firstIndex + 1, fieldType.length - 1).toString()
+
+            val commonIndex = itemType.indexOfFirst { ch->ch.toString()==Attrs.COMMA }
+            if(commonIndex>-1){
+                val ltIndex = itemType.indexOfFirst { ch -> ch.toString() == Attrs.LT }
+                if (ltIndex>commonIndex){
+                    itemType = itemType.split(Attrs.COMMA)[1]
+                    return SchemaBuildUtil.getTypeSchemaBuild(itemType).buildSchema(requestBody,null,allObjMap,itemType)
+                }
+            }
             return SchemaBuildUtil.getTypeSchemaBuild(itemType).buildSchema(requestBody[0],null,allObjMap,itemType)
         }else{
-            return SchemaBuildUtil.getTypeSchemaBuild("*").buildSchema(requestBody,null,allObjMap,null)
+            return SchemaBuildUtil.getTypeSchemaBuild("*").buildSchema(requestBody[0],null,allObjMap,null)
         }
     }
 

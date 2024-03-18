@@ -38,8 +38,8 @@ class MapSchemaBuild:SchemaBuild {
             val firstIndex = fieldType.indexOfFirst { ch -> ch.toString() == Attrs.LT }
             val generics = fieldType.subSequence(firstIndex + 1, fieldType.length - 1)
             val itemType = generics.split(Attrs.COMMA)[1]
-            val paramBody = (requestBody[fieldName] as LinkedHashMap<String,*>)[StringUtils.EMPTY] as LinkedHashMap<String,*>
-            return SchemaBuildUtil.getTypeSchemaBuild(itemType).buildSchema(paramBody,null,allObjMap,fieldType)
+            val paramBody = (requestBody[fieldName] as LinkedHashMap<String,*>)[StringUtils.EMPTY]
+            return SchemaBuildUtil.getTypeSchemaBuild(itemType).buildSchema(paramBody!!,null,allObjMap,itemType)
 
         } else {
 

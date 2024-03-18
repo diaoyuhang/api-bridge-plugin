@@ -443,21 +443,7 @@ open class SuvApiExporter {
                     }
                     val allSchema = linkedMapOf<String, Schema<*>>()
                     //构建schema
-                    var obtainTypeSchema = SchemaBuildUtil.obtainTypeSchema(request, "key", allSchema)
-//                    val body: LinkedHashMap<String, *>? = request.body?.let { it as? LinkedHashMap<String, *> }
-//                    if (body != null) {
-//                        val  schema = PrimitiveType.OBJECT.createProperty()
-//                        val properties = linkedMapOf<String,Schema<*>?>()
-//                        schema.properties= properties
-//
-//                        for((key,value) in body){
-//                            if (key.startsWith(Attrs.PREFIX)){
-//
-//                            }else{
-//                                properties[key] = SchemaBuildUtil.obtainTypeSchema(request, key, linkedMapOf())
-//                            }
-//                        }
-//                    }
+                    var obtainTypeSchema = SchemaBuildUtil.obtainTypeSchema(request.body, allSchema)
 
                     if(classAnnoInfo.contains(Attrs.TAG_ATTR)){
                         val tagInfo = classAnnoInfo[Attrs.TAG_ATTR] as Map<*,*>
