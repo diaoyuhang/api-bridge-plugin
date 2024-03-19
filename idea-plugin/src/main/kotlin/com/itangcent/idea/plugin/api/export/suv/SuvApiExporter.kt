@@ -57,12 +57,17 @@ import com.itangcent.suv.http.HttpClientProvider
 import com.itangcent.utils.GitUtils
 import io.swagger.v3.oas.models.*
 import io.swagger.v3.oas.models.info.Info
+import io.swagger.v3.oas.models.media.Content
+import io.swagger.v3.oas.models.media.MediaType
 import io.swagger.v3.oas.models.media.Schema
+import io.swagger.v3.oas.models.parameters.RequestBody
 import io.swagger.v3.oas.models.responses.ApiResponse
 import io.swagger.v3.oas.models.responses.ApiResponses
 import io.swagger.v3.oas.models.tags.Tag
 import org.apache.commons.lang3.StringUtils
 import org.springdoc.core.Constants
+import org.springdoc.core.MethodAttributes
+import org.springdoc.core.RequestBodyInfo
 import org.springdoc.core.SpringDocConfigProperties
 import org.springdoc.core.providers.ObjectMapperProvider
 import java.lang.annotation.ElementType
@@ -472,7 +477,31 @@ open class SuvApiExporter {
                     val allSchema = linkedMapOf<String, Schema<*>>()
                     //构建schema
                     var obtainTypeSchema = SchemaBuildUtil.obtainTypeSchema(request.body, allSchema)
-//                    operation.requestBody = obtainTypeSchema
+
+                    val methodConsumes:Array<String> = emptyArray()
+                    val methodProduces:Array<String> = emptyArray()
+                    val headers:Array<String> = emptyArray()
+
+                    val methodAttributes = MethodAttributes(
+                        "application/json",
+                        "*/*",
+                        methodConsumes,
+                        methodProduces,
+                        headers,
+                        Locale.CHINA
+                    )
+                    val content = Content()
+                    val requestBodyInfo = RequestBodyInfo()
+                    val requestBody = RequestBody()
+                    requestBodyInfo.requestBody = requestBody
+                    requestBody.content = content
+                    operation.requestBody=requestBody
+
+                    for (value in methodAttributes.methodConsumes) {
+                        val mediaTypeObject = MediaType()
+                        mediaTypeObject.schema = obtainTypeSchema
+                        content.addMediaType(value, mediaTypeObject)
+                    }
                     val components: Components = openApi.components
                     val paths: Paths = openApi.paths
                     components.schemas=allSchema
@@ -480,6 +509,7 @@ open class SuvApiExporter {
                     pathItemObject.post=operation
                     paths.addPathItem("",pathItemObject)
 
+                    logger!!.info(writeJson(openApi))
                 }
             } catch (e: Exception) {
                 logger!!.traceError("get project git branch fail",e)
