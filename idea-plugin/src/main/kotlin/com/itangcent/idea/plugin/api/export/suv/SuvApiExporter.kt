@@ -478,8 +478,8 @@ open class SuvApiExporter {
                     //构建schema
                     var obtainTypeSchema = SchemaBuildUtil.obtainTypeSchema(request.body, allSchema)
 
-                    val methodConsumes:Array<String> = emptyArray()
-                    val methodProduces:Array<String> = emptyArray()
+                    val methodConsumes:Array<String> = arrayOf("application/json")
+                    val methodProduces:Array<String> = arrayOf("*/*")
                     val headers:Array<String> = emptyArray()
 
                     val methodAttributes = MethodAttributes(

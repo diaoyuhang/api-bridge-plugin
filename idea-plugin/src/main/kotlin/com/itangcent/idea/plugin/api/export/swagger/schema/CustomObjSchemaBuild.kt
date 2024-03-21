@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.api.export.swagger.schema
 
 import com.itangcent.common.constant.Attrs
 import com.itangcent.idea.plugin.api.export.swagger.SchemaBuildUtil
+import io.swagger.v3.core.util.PrimitiveType
 import io.swagger.v3.oas.models.Components
 import io.swagger.v3.oas.models.media.ObjectSchema
 import io.swagger.v3.oas.models.media.Schema
@@ -14,6 +15,9 @@ class CustomObjSchemaBuild : SchemaBuild {
         fieldType: String?
     ): Schema<*> {
         val requestBody = requestBody as LinkedHashMap<String, *>
+        if (requestBody.isEmpty()){
+            return PrimitiveType.OBJECT.createProperty()
+        }
         val schema = Schema<Any>()
 
         val customObj = allObjMap[requestBody[Attrs.QUALIFIED_CLASS_NAME_ATTR]]
