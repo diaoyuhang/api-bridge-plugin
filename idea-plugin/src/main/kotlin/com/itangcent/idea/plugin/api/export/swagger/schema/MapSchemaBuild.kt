@@ -23,26 +23,28 @@ class MapSchemaBuild:SchemaBuild {
         val fieldTypeMap = requestBody[Attrs.JAVA_TYPE_ATTR] as LinkedHashMap<String, String>
         val fieldType = fieldTypeMap[fieldName]
 
-        mapSchema.additionalProperties = assembleSchema(fieldType!!, requestBody, fieldName, allObjMap)
+        mapSchema.additionalProperties = assembleSchema(fieldType, requestBody, fieldName, allObjMap)
 
         return mapSchema
     }
 
     private fun assembleSchema(
-        fieldType: String,
+        fieldType: String?,
         requestBody: LinkedHashMap<String, *>,
         fieldName: String?,
         allObjMap: LinkedHashMap<String, Schema<*>>
     ):Schema<*> {
-        if (fieldType.endsWith(Attrs.GT)) {
+        if (fieldType == null) {
+            return SchemaBuildUtil.getTypeSchemaBuild("*").buildSchema(requestBody, null, allObjMap, fieldType)
+        } else if (fieldType.endsWith(Attrs.GT)) {
             val firstIndex = fieldType.indexOfFirst { ch -> ch.toString() == Attrs.LT }
             val generics = fieldType.subSequence(firstIndex + 1, fieldType.length - 1)
             if (Attrs.COMMA == generics) {
                 return SchemaBuildUtil.getTypeSchemaBuild("*").buildSchema(requestBody, null, allObjMap, fieldType)
             }
             val itemType = generics.split(Attrs.COMMA)[1]
-            val paramBody = (requestBody[fieldName] as LinkedHashMap<String,*>)[StringUtils.EMPTY]
-            return SchemaBuildUtil.getTypeSchemaBuild(itemType).buildSchema(paramBody!!,null,allObjMap,itemType)
+            val paramBody = (requestBody[fieldName] as LinkedHashMap<String, *>)[StringUtils.EMPTY]
+            return SchemaBuildUtil.getTypeSchemaBuild(itemType).buildSchema(paramBody!!, null, allObjMap, itemType)
 
         } else {
 

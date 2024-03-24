@@ -1,5 +1,6 @@
 package com.itangcent.idea.plugin.api.export.swagger
 
+import com.intellij.xdebugger.impl.breakpoints.getType
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.api.export.swagger.schema.*
@@ -37,15 +38,16 @@ object SchemaBuildUtil {
             val schemaBuild = if(body.contains(StringUtils.EMPTY)){
                 getTypeSchemaBuild("java.util.Map")
             }else{
-                 getTypeSchemaBuild("object")
+                 getTypeSchemaBuild(requestBody[Attrs.QUALIFIED_CLASS_NAME_ATTR] as String)
             }
 
             return schemaBuild.buildSchema(body, null, allObjMap, null)
         } else if (requestBody is ArrayList<*>) {
             val arraySchemaBuild = getTypeSchemaBuild("[]")
             return arraySchemaBuild.buildSchema(requestBody, null, allObjMap, null)
+        }else{
+            return getTypeSchemaBuild(requestBody.javaClass.name).buildSchema(requestBody, null, allObjMap, null)
         }
-        return null
     }
 
     fun obtainTypeSchema(

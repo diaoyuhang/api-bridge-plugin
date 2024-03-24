@@ -55,20 +55,19 @@ import com.itangcent.intellij.util.UIUtils
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import com.itangcent.suv.http.HttpClientProvider
 import com.itangcent.utils.GitUtils
+import io.swagger.v3.core.util.PrimitiveType
 import io.swagger.v3.oas.models.*
 import io.swagger.v3.oas.models.info.Info
 import io.swagger.v3.oas.models.media.Content
 import io.swagger.v3.oas.models.media.MediaType
 import io.swagger.v3.oas.models.media.Schema
+import io.swagger.v3.oas.models.parameters.Parameter
 import io.swagger.v3.oas.models.parameters.RequestBody
 import io.swagger.v3.oas.models.responses.ApiResponse
 import io.swagger.v3.oas.models.responses.ApiResponses
 import io.swagger.v3.oas.models.tags.Tag
 import org.apache.commons.lang3.StringUtils
-import org.springdoc.core.Constants
-import org.springdoc.core.MethodAttributes
-import org.springdoc.core.RequestBodyInfo
-import org.springdoc.core.SpringDocConfigProperties
+import org.springdoc.core.*
 import org.springdoc.core.providers.ObjectMapperProvider
 import java.lang.annotation.ElementType
 import java.util.*
@@ -456,27 +455,26 @@ open class SuvApiExporter {
                         openApi.tags = listOf(tag)
                     }
 
-                    if(methodAnnoInfo.contains(Attrs.API_RESPONSES_ATTR)){
-                        val apiResponses = ApiResponses()
-                        val apiResponsesInfo = methodAnnoInfo[Attrs.API_RESPONSES_ATTR] as Map<*,*>
-                        val apiResponseList = apiResponsesInfo["value"] as Array<*>
-                        operation.responses = apiResponses
 
-                        for (objRes in apiResponseList) {
-                            val ar = objRes as LinkedHashMap<*,*>
 
-                            val apiResponse = ApiResponse()
-                            val httpCode = ar["responseCode"] as String
-                            val description = ar["description"] as String
-                            apiResponse.description = description
+                    operation.parameters =
+                        request.headers?.mapNotNull { header ->
+                            if (!header.name.equals("Content-Type")) {
+                                val parameter = Parameter().apply {
+                                    name = header.name
+                                    `in` = "header"
+                                    required = header.required
+                                    schema = PrimitiveType.STRING.createProperty()
+                                }
+                                parameter
+                            } else {
+                                null
+                            }
 
-                            apiResponses.addApiResponse(httpCode,apiResponse)
-                        }
-                    }
+                        }!!.toMutableList()
 
-                    val allSchema = linkedMapOf<String, Schema<*>>()
                     //构建schema
-                    var obtainTypeSchema = SchemaBuildUtil.obtainTypeSchema(request.body, allSchema)
+                    var obtainTypeSchema = SchemaBuildUtil.obtainTypeSchema(request.body, linkedMapOf())
 
                     val methodConsumes:Array<String> = arrayOf("application/json")
                     val methodProduces:Array<String> = arrayOf("*/*")
@@ -502,13 +500,38 @@ open class SuvApiExporter {
                         mediaTypeObject.schema = obtainTypeSchema
                         content.addMediaType(value, mediaTypeObject)
                     }
-                    val components: Components = openApi.components
+
                     val paths: Paths = openApi.paths
-                    components.schemas=allSchema
                     val pathItemObject = PathItem();
                     pathItemObject.post=operation
-                    paths.addPathItem("",pathItemObject)
+                    paths.addPathItem(request.path?.url(),pathItemObject)
 
+
+                    val responseSchema = request.response?.get(0)?.let { SchemaBuildUtil.obtainTypeSchema(it.body, linkedMapOf()) }
+                    val responseContent = Content()
+                    for (value in methodAttributes.methodProduces) {
+                        val mediaTypeObject = MediaType()
+                        mediaTypeObject.schema = responseSchema
+                        responseContent.addMediaType(value, mediaTypeObject)
+                    }
+
+                    if (methodAnnoInfo.contains(Attrs.API_RESPONSES_ATTR)) {
+                        val apiResponses = ApiResponses()
+                        val apiResponsesInfo = methodAnnoInfo[Attrs.API_RESPONSES_ATTR] as Map<*, *>
+                        val apiResponseList = apiResponsesInfo["value"] as Array<*>
+                        operation.responses = apiResponses
+
+                        for (objRes in apiResponseList) {
+                            val ar = objRes as LinkedHashMap<*, *>
+
+                            val apiResponse = ApiResponse()
+                            val httpCode = ar["responseCode"] as String
+                            val description = ar["description"] as String
+                            apiResponse.description = description
+                            apiResponse.content = responseContent
+                            apiResponses.addApiResponse(httpCode, apiResponse)
+                        }
+                    }
                     logger!!.info(writeJson(openApi))
                 }
             } catch (e: Exception) {
