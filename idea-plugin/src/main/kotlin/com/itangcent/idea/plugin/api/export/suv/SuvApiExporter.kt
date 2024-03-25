@@ -49,6 +49,7 @@ import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.jvm.PsiClassHelper
+import com.itangcent.intellij.jvm.duck.SingleDuckType
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.tip.TipsHelper
 import com.itangcent.intellij.util.UIUtils
@@ -62,6 +63,7 @@ import io.swagger.v3.oas.models.media.Content
 import io.swagger.v3.oas.models.media.MediaType
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.Parameter
+import io.swagger.v3.oas.models.parameters.PathParameter
 import io.swagger.v3.oas.models.parameters.RequestBody
 import io.swagger.v3.oas.models.responses.ApiResponse
 import io.swagger.v3.oas.models.responses.ApiResponses
@@ -455,8 +457,6 @@ open class SuvApiExporter {
                         openApi.tags = listOf(tag)
                     }
 
-
-
                     operation.parameters =
                         request.headers?.mapNotNull { header ->
                             if (!header.name.equals("Content-Type")) {
@@ -464,14 +464,29 @@ open class SuvApiExporter {
                                     name = header.name
                                     `in` = "header"
                                     required = header.required
-                                    schema = PrimitiveType.STRING.createProperty()
+
+                                    val type = (header.exts()?.get("javaType") as SingleDuckType).canonicalText()
+                                    schema = SchemaBuildUtil.getTypeSchemaBuild(type).buildSchema(header,null,linkedMapOf(),null)
+
+                                    header.exts()
                                 }
                                 parameter
                             } else {
                                 null
                             }
+                        }?: mutableListOf()
 
-                        }!!.toMutableList()
+                    operation.parameters.addAll(request.paths?.mapNotNull { pathParam ->
+                        val param = PathParameter().apply {
+                            name = pathParam.name
+                            `in` = "path"
+                            required = true
+                            val type = (pathParam.exts()?.get("javaType") as SingleDuckType).canonicalText()
+                            schema = SchemaBuildUtil.getTypeSchemaBuild(type)
+                                .buildSchema(pathParam, null, linkedMapOf(), null)
+                        }
+                        param
+                    } ?: mutableListOf())
 
                     //构建schema
                     var obtainTypeSchema = SchemaBuildUtil.obtainTypeSchema(request.body, linkedMapOf())

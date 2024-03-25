@@ -179,7 +179,7 @@ fun RequestBuilderListener.addFormParam(
     param.desc = desc
     param.type = "text"
 
-    param.setExts(exportContext.exts()?.get("raw")?.let { it as Map<String, Any?> } ?: linkedMapOf())
+    exportContext.exts()?.let { param.setExts(it) }
     this.addFormParam(
         exportContext, request,
         param
@@ -211,6 +211,7 @@ fun RequestBuilderListener.addHeader(
     header.name = name
     header.value = value
     header.required = true
+    exportContext.exts()?.let { header.setExts(it) }
     addHeader(
         exportContext, request,
         header
@@ -239,6 +240,7 @@ fun RequestBuilderListener.addPathParam(
     val pathParam = PathParam()
     pathParam.name = name
     pathParam.desc = desc
+    exportContext.exts()?.let { pathParam.setExts(it) }
     this.addPathParam(
         exportContext, request,
         pathParam
