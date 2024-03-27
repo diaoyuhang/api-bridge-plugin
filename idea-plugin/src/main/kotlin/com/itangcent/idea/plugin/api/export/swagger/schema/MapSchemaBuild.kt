@@ -20,8 +20,11 @@ class MapSchemaBuild:SchemaBuild {
             mapSchema.name = fieldName
             AnnoInfoAssemble.SchemaAnnoAssemble.assembleInfo(mapSchema, requestBody, fieldName)
         }
-        val fieldTypeMap = requestBody[Attrs.JAVA_TYPE_ATTR] as LinkedHashMap<String, String>
-        val fieldType = fieldTypeMap[fieldName]
+        if(!requestBody.isEmpty()){
+            val fieldTypeMap = requestBody[Attrs.JAVA_TYPE_ATTR] as LinkedHashMap<String, String>
+            val fieldType = fieldTypeMap[fieldName]
+        }
+
 
         mapSchema.additionalProperties = assembleSchema(fieldType, requestBody, fieldName, allObjMap)
 

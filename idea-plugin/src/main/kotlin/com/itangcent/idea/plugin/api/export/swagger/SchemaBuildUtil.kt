@@ -34,13 +34,14 @@ object SchemaBuildUtil {
         }
 
         if (requestBody is LinkedHashMap<*, *>) {
-            val body = requestBody as LinkedHashMap<String, *>
+            var body = requestBody as LinkedHashMap<String, *>
             val schemaBuild = if(body.contains(StringUtils.EMPTY)){
+                body = body[StringUtils.EMPTY] as LinkedHashMap<String, *>
+
                 getTypeSchemaBuild("java.util.Map")
             }else{
                  getTypeSchemaBuild(requestBody[Attrs.QUALIFIED_CLASS_NAME_ATTR] as String)
             }
-
             return schemaBuild.buildSchema(body, null, allObjMap, null)
         } else if (requestBody is ArrayList<*>) {
             val arraySchemaBuild = getTypeSchemaBuild("[]")

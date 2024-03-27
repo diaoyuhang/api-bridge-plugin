@@ -62,8 +62,10 @@ import io.swagger.v3.oas.models.info.Info
 import io.swagger.v3.oas.models.media.Content
 import io.swagger.v3.oas.models.media.MediaType
 import io.swagger.v3.oas.models.media.Schema
+import io.swagger.v3.oas.models.parameters.HeaderParameter
 import io.swagger.v3.oas.models.parameters.Parameter
 import io.swagger.v3.oas.models.parameters.PathParameter
+import io.swagger.v3.oas.models.parameters.QueryParameter
 import io.swagger.v3.oas.models.parameters.RequestBody
 import io.swagger.v3.oas.models.responses.ApiResponse
 import io.swagger.v3.oas.models.responses.ApiResponses
@@ -73,6 +75,7 @@ import org.springdoc.core.*
 import org.springdoc.core.providers.ObjectMapperProvider
 import java.lang.annotation.ElementType
 import java.util.*
+import kotlin.collections.LinkedHashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
 
@@ -460,9 +463,8 @@ open class SuvApiExporter {
                     operation.parameters =
                         request.headers?.mapNotNull { header ->
                             if (!header.name.equals("Content-Type")) {
-                                val parameter = Parameter().apply {
+                                val parameter = HeaderParameter().apply {
                                     name = header.name
-                                    `in` = "header"
                                     required = header.required
 
                                     val type = (header.exts()?.get("javaType") as SingleDuckType).canonicalText()
@@ -479,7 +481,6 @@ open class SuvApiExporter {
                     operation.parameters.addAll(request.paths?.mapNotNull { pathParam ->
                         val param = PathParameter().apply {
                             name = pathParam.name
-                            `in` = "path"
                             required = true
                             val type = (pathParam.exts()?.get("javaType") as SingleDuckType).canonicalText()
                             schema = SchemaBuildUtil.getTypeSchemaBuild(type)
@@ -487,6 +488,28 @@ open class SuvApiExporter {
                         }
                         param
                     } ?: mutableListOf())
+                    val typeSet = mutableSetOf<String>()
+                    operation.parameters.addAll(request.querys?.mapNotNull { queryParam->
+                        val exts = queryParam.exts()
+                        val type = (exts?.get("javaType") as SingleDuckType).canonicalText()
+                        if (type != null && !typeSet.contains(type)) {
+                            val param = QueryParameter().apply {
+                                var param = exts["raw"]
+                                if (param is LinkedHashMap<*, *>){
+                                    name = type
+                                    schema = SchemaBuildUtil.obtainTypeSchema(param, linkedMapOf())
+                                    typeSet.add(type)
+                                }else{
+                                    schema = SchemaBuildUtil.getTypeSchemaBuild(type)
+                                        .buildSchema(queryParam, null, linkedMapOf(), null)
+                                }
+
+                            }
+                            param
+                        } else {
+                            null
+                        }
+                    }?: mutableListOf())
 
                     //构建schema
                     var obtainTypeSchema = SchemaBuildUtil.obtainTypeSchema(request.body, linkedMapOf())
@@ -546,6 +569,12 @@ open class SuvApiExporter {
                             apiResponse.content = responseContent
                             apiResponses.addApiResponse(httpCode, apiResponse)
                         }
+                    }else{
+                        val apiResponses = ApiResponses()
+                        operation.responses = apiResponses
+                        val apiResponse = ApiResponse()
+                        apiResponse.content = responseContent
+                        apiResponses.addApiResponse("200", apiResponse)
                     }
                     logger!!.info(writeJson(openApi))
                 }
