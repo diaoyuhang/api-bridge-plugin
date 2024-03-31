@@ -36,7 +36,7 @@ object SchemaBuildUtil {
         if (requestBody is LinkedHashMap<*, *>) {
             var body = requestBody as LinkedHashMap<String, *>
             val schemaBuild = if(body.contains(StringUtils.EMPTY)){
-                body = body[StringUtils.EMPTY] as LinkedHashMap<String, *>
+                body = body[StringUtils.EMPTY]?.let { it as LinkedHashMap<String, *> } ?: linkedMapOf<String, Any>()
 
                 getTypeSchemaBuild("java.util.Map")
             }else{

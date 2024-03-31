@@ -1,6 +1,7 @@
 package com.itangcent.idea.plugin.api.export.swagger.schema
 
 import com.itangcent.common.constant.Attrs
+import com.itangcent.idea.plugin.api.export.swagger.AnnoInfoAssemble
 import com.itangcent.idea.plugin.api.export.swagger.SchemaBuildUtil
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.Schema

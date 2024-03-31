@@ -23,11 +23,11 @@ class MapSchemaBuild:SchemaBuild {
         if(!requestBody.isEmpty()){
             val fieldTypeMap = requestBody[Attrs.JAVA_TYPE_ATTR] as LinkedHashMap<String, String>
             val fieldType = fieldTypeMap[fieldName]
+            mapSchema.additionalProperties = assembleSchema(fieldType, requestBody, fieldName, allObjMap)
+
+        }else{
+            mapSchema.additionalProperties = assembleSchema(fieldType, requestBody, fieldName, allObjMap)
         }
-
-
-        mapSchema.additionalProperties = assembleSchema(fieldType, requestBody, fieldName, allObjMap)
-
         return mapSchema
     }
 

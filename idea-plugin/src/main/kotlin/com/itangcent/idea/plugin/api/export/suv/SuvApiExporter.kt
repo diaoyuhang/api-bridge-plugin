@@ -6,6 +6,7 @@ import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiMethod
 import com.itangcent.common.constant.Attrs
+import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Doc
 import com.itangcent.common.model.MethodDoc
@@ -24,6 +25,7 @@ import com.itangcent.idea.plugin.api.export.curl.CurlExporter
 import com.itangcent.idea.plugin.api.export.http.HttpClientExporter
 import com.itangcent.idea.plugin.api.export.markdown.MarkdownFormatter
 import com.itangcent.idea.plugin.api.export.postman.*
+import com.itangcent.idea.plugin.api.export.swagger.AnnoInfoAssemble
 import com.itangcent.idea.plugin.api.export.swagger.SchemaBuildUtil
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.idea.plugin.dialog.SuvApiExportDialog
@@ -205,14 +207,14 @@ open class SuvApiExporter {
             actionContextBuilder.bindInstance(DataContext::class, actionContext.instance(DataContext::class))
 
             val resources = requests
-                    .asSequence()
-                    .map { it.resource }
-                    .filter { it != null }
-                    .map { it as PsiResource }
-                    .map { it.resource() }
-                    .filter { it is PsiMethod }
-                    .map { it as PsiMethod }
-                    .toList()
+                .asSequence()
+                .map { it.resource }
+                .filter { it != null }
+                .map { it as PsiResource }
+                .map { it.resource() }
+                .filter { it is PsiMethod }
+                .map { it as PsiMethod }
+                .toList()
 
             actionContextBuilder.bindInstance(MethodFilter::class, ExplicitMethodFilter(resources))
 
@@ -253,8 +255,8 @@ open class SuvApiExporter {
         }
 
         protected open fun onBuildActionContext(
-                actionContext: ActionContext,
-                builder: ActionContext.ActionContextBuilder
+            actionContext: ActionContext,
+            builder: ActionContext.ActionContextBuilder
         ) {
 
             builder.bindInstance("plugin.name", "easy_api")
@@ -288,8 +290,8 @@ open class SuvApiExporter {
         }
 
         protected open fun afterBuildActionContext(
-                actionContext: ActionContext,
-                builder: ActionContext.ActionContextBuilder
+            actionContext: ActionContext,
+            builder: ActionContext.ActionContextBuilder
         ) {
 
         }
@@ -297,14 +299,14 @@ open class SuvApiExporter {
         private fun doExportApisFromMethod(requestWrappers: List<DocWrapper>) {
 
             val classes = requestWrappers
-                    .asSequence()
-                    .map { it.resource }
-                    .filter { it is PsiResource }
-                    .map { it as PsiResource }
-                    .map { it.resourceClass() }
-                    .filter { it != null }
-                    .distinct()
-                    .toList()
+                .asSequence()
+                .map { it.resource }
+                .filter { it is PsiResource }
+                .map { it as PsiResource }
+                .map { it.resourceClass() }
+                .filter { it != null }
+                .distinct()
+                .toList()
 
 
             actionContext.runAsync {
@@ -378,8 +380,8 @@ open class SuvApiExporter {
         }
 
         override fun afterBuildActionContext(
-                actionContext: ActionContext,
-                builder: ActionContext.ActionContextBuilder
+            actionContext: ActionContext,
+            builder: ActionContext.ActionContextBuilder
         ) {
             super.afterBuildActionContext(actionContext, builder)
 
@@ -411,7 +413,7 @@ open class SuvApiExporter {
 
         override fun doExportDocs(docs: MutableList<Doc>) {
             actionContext.instance(PostmanApiExporter::class)
-                    .export(docs.filterAs())
+                .export(docs.filterAs())
         }
     }
 
@@ -420,14 +422,14 @@ open class SuvApiExporter {
             try {
                 val projectFilePath = project.basePath
                 val gitBranchName = GitUtils.getGitBranchName(projectFilePath!!)
-                if (StringUtils.isBlank(gitBranchName)){
+                if (StringUtils.isBlank(gitBranchName)) {
                     throw RuntimeException("git branch is empty")
                 }
 
                 val operation = Operation()
                 val openApiList = mutableListOf<OpenAPI>()
 
-                for (request in docs.filterAs<Request>()){
+                for (request in docs.filterAs<Request>()) {
                     val openApi = buildOpenApi()
                     openApiList.add(openApi)
 
@@ -435,19 +437,19 @@ open class SuvApiExporter {
                     val methodAnnoInfo = someAnnotationsInfo!![ElementType.METHOD.toString()] as Map<*, *>
                     val classAnnoInfo = someAnnotationsInfo!![ElementType.TYPE.toString()] as Map<*, *>
 
-                    if (methodAnnoInfo.contains(Attrs.DEPRECATED_ATTR)){
-                        operation.deprecated=true
+                    if (methodAnnoInfo.contains(Attrs.DEPRECATED_ATTR)) {
+                        operation.deprecated = true
                     }
 
-                    if(methodAnnoInfo.contains(Attrs.OPERATION_ATTR)){
+                    if (methodAnnoInfo.contains(Attrs.OPERATION_ATTR)) {
                         val operationInfo = methodAnnoInfo[Attrs.OPERATION_ATTR] as Map<*, *>
                         operation.summary = operationInfo["summary"] as? String
                         operation.description = operationInfo["description"] as? String
 
                     }
 
-                    if(classAnnoInfo.contains(Attrs.TAG_ATTR)){
-                        val tagInfo = classAnnoInfo[Attrs.TAG_ATTR] as Map<*,*>
+                    if (classAnnoInfo.contains(Attrs.TAG_ATTR)) {
+                        val tagInfo = classAnnoInfo[Attrs.TAG_ATTR] as Map<*, *>
                         val tagStrList = mutableListOf<String>()
                         val name = tagInfo["name"] as String
                         val description = tagInfo["description"] as String
@@ -468,7 +470,8 @@ open class SuvApiExporter {
                                     required = header.required
 
                                     val type = (header.exts()?.get("javaType") as SingleDuckType).canonicalText()
-                                    schema = SchemaBuildUtil.getTypeSchemaBuild(type).buildSchema(header,null,linkedMapOf(),null)
+                                    schema = SchemaBuildUtil.getTypeSchemaBuild(type)
+                                        .buildSchema(header, null, linkedMapOf(), null)
 
                                     header.exts()
                                 }
@@ -476,7 +479,7 @@ open class SuvApiExporter {
                             } else {
                                 null
                             }
-                        }?: mutableListOf()
+                        } ?: mutableListOf()
 
                     operation.parameters.addAll(request.paths?.mapNotNull { pathParam ->
                         val param = PathParameter().apply {
@@ -489,19 +492,49 @@ open class SuvApiExporter {
                         param
                     } ?: mutableListOf())
                     val typeSet = mutableSetOf<String>()
-                    operation.parameters.addAll(request.querys?.mapNotNull { queryParam->
+                    operation.parameters.addAll(request.querys?.mapNotNull { queryParam ->
                         val exts = queryParam.exts()
                         val type = (exts?.get("javaType") as SingleDuckType).canonicalText()
                         if (type != null && !typeSet.contains(type)) {
                             val param = QueryParameter().apply {
+                                var raw = exts["raw"]!!
+                                required = queryParam.required
+                                name = if (raw is LinkedHashMap<*, *>) {
+                                    schema = SchemaBuildUtil.obtainTypeSchema(raw, linkedMapOf())
+                                    typeSet.add(type)
+                                    type
+                                } else {
+                                    schema = SchemaBuildUtil.getTypeSchemaBuild(type).buildSchema(
+                                        raw, null,
+                                        linkedMapOf(), type
+                                    )
+                                    queryParam.name
+                                }
+                                val fieldAnnoInfo = someAnnotationsInfo!![ElementType.FIELD.toString()] as Map<*, *>
+                                if (fieldAnnoInfo.contains(queryParam.name)) {
+                                    val fieldMapInfo = fieldAnnoInfo[queryParam.name] as LinkedHashMap<String, *>
+                                    AnnoInfoAssemble.SchemaAnnoAssemble.assembleInfo(schema,fieldMapInfo)
+                                }
+                            }
+                            param
+                        } else {
+                            null
+                        }
+                    } ?: mutableListOf())
+
+                    operation.parameters.addAll(request.formParams?.mapNotNull { formParam ->
+                        val exts = formParam.exts()
+                        val type = (exts?.get("javaType") as SingleDuckType).canonicalText()
+                        if (type != null && !typeSet.contains(type)) {
+                            val param = QueryParameter().apply {
                                 var param = exts["raw"]
-                                if (param is LinkedHashMap<*, *>){
+                                if (param is LinkedHashMap<*, *>) {
                                     name = type
                                     schema = SchemaBuildUtil.obtainTypeSchema(param, linkedMapOf())
                                     typeSet.add(type)
-                                }else{
+                                } else {
                                     schema = SchemaBuildUtil.getTypeSchemaBuild(type)
-                                        .buildSchema(queryParam, null, linkedMapOf(), null)
+                                        .buildSchema(formParam, null, linkedMapOf(), null)
                                 }
 
                             }
@@ -509,14 +542,14 @@ open class SuvApiExporter {
                         } else {
                             null
                         }
-                    }?: mutableListOf())
+                    } ?: mutableListOf())
 
                     //构建schema
                     var obtainTypeSchema = SchemaBuildUtil.obtainTypeSchema(request.body, linkedMapOf())
 
-                    val methodConsumes:Array<String> = arrayOf("application/json")
-                    val methodProduces:Array<String> = arrayOf("*/*")
-                    val headers:Array<String> = emptyArray()
+                    val methodConsumes: Array<String> = arrayOf("application/json")
+                    val methodProduces: Array<String> = arrayOf("*/*")
+                    val headers: Array<String> = emptyArray()
 
                     val methodAttributes = MethodAttributes(
                         "application/json",
@@ -531,7 +564,7 @@ open class SuvApiExporter {
                     val requestBody = RequestBody()
                     requestBodyInfo.requestBody = requestBody
                     requestBody.content = content
-                    operation.requestBody=requestBody
+                    operation.requestBody = requestBody
 
                     for (value in methodAttributes.methodConsumes) {
                         val mediaTypeObject = MediaType()
@@ -541,11 +574,20 @@ open class SuvApiExporter {
 
                     val paths: Paths = openApi.paths
                     val pathItemObject = PathItem();
-                    pathItemObject.post=operation
-                    paths.addPathItem(request.path?.url(),pathItemObject)
+                    if (HttpMethod.GET.equals(request.method)) {
+                        pathItemObject.get = operation
+                    } else if (HttpMethod.POST.equals(request.method)) {
+                        pathItemObject.post = operation
+                    } else if (HttpMethod.DELETE.equals(request.method)) {
+                        pathItemObject.delete = operation
+                    } else {
+                        pathItemObject.put = operation
+                    }
+                    paths.addPathItem(request.path?.url(), pathItemObject)
 
 
-                    val responseSchema = request.response?.get(0)?.let { SchemaBuildUtil.obtainTypeSchema(it.body, linkedMapOf()) }
+                    val responseSchema =
+                        request.response?.get(0)?.let { SchemaBuildUtil.obtainTypeSchema(it.body, linkedMapOf()) }
                     val responseContent = Content()
                     for (value in methodAttributes.methodProduces) {
                         val mediaTypeObject = MediaType()
@@ -569,7 +611,7 @@ open class SuvApiExporter {
                             apiResponse.content = responseContent
                             apiResponses.addApiResponse(httpCode, apiResponse)
                         }
-                    }else{
+                    } else {
                         val apiResponses = ApiResponses()
                         operation.responses = apiResponses
                         val apiResponse = ApiResponse()
@@ -579,20 +621,21 @@ open class SuvApiExporter {
                     logger!!.info(writeJson(openApi))
                 }
             } catch (e: Exception) {
-                logger!!.traceError("get project git branch fail",e)
+                logger!!.traceError("get project git branch fail", e)
             }
         }
 
-        private fun writeJson(openAPI: OpenAPI):String{
+        private fun writeJson(openAPI: OpenAPI): String {
             val springDocConfigProperties = SpringDocConfigProperties()
             val objectMapperProvider = ObjectMapperProvider(springDocConfigProperties);
 
             return objectMapperProvider.jsonMapper().writerFor(openAPI.javaClass).writeValueAsString(openAPI)
         }
+
         private fun buildOpenApi(): OpenAPI {
             val openApi = OpenAPI()
             openApi.components = Components()
-            openApi.paths =Paths()
+            openApi.paths = Paths()
 
             openApi.info = Info().title(Constants.DEFAULT_TITLE).version(Constants.DEFAULT_VERSION)
             return openApi
@@ -616,8 +659,8 @@ open class SuvApiExporter {
         }
 
         override fun afterBuildActionContext(
-                actionContext: ActionContext,
-                builder: ActionContext.ActionContextBuilder
+            actionContext: ActionContext,
+            builder: ActionContext.ActionContextBuilder
         ) {
             super.afterBuildActionContext(actionContext, builder)
 
@@ -680,8 +723,8 @@ open class SuvApiExporter {
         }
 
         override fun afterBuildActionContext(
-                actionContext: ActionContext,
-                builder: ActionContext.ActionContextBuilder
+            actionContext: ActionContext,
+            builder: ActionContext.ActionContextBuilder
         ) {
             super.afterBuildActionContext(actionContext, builder)
 
@@ -778,9 +821,9 @@ open class SuvApiExporter {
     companion object {
 
         private val EXPORTER_CHANNELS: List<*> = listOf(
-                ApiExporterWrapper(PostmanApiExporterAdapter::class, "Postman", Request::class),
-                ApiExporterWrapper(MarkdownApiExporterAdapter::class, "Markdown", Request::class, MethodDoc::class),
-                ApiExporterWrapper(CurlApiExporterAdapter::class, "Curl", Request::class),
+            ApiExporterWrapper(PostmanApiExporterAdapter::class, "Postman", Request::class),
+            ApiExporterWrapper(MarkdownApiExporterAdapter::class, "Markdown", Request::class, MethodDoc::class),
+            ApiExporterWrapper(CurlApiExporterAdapter::class, "Curl", Request::class),
             ApiExporterWrapper(HttpClientApiExporterAdapter::class, "HttpClient", Request::class),
             ApiExporterWrapper(ApiPlatformExporterAdapter::class, "ApiPlatform", Request::class)
         )
