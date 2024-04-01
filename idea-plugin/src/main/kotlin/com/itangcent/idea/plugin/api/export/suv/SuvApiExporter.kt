@@ -7,12 +7,14 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiMethod
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.constant.HttpMethod
+import com.itangcent.common.kit.toJson
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Doc
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.filterAs
 import com.itangcent.debug.LoggerCollector
+import com.itangcent.http.ApacheHttpClient
 import com.itangcent.idea.config.CachedResourceResolver
 import com.itangcent.idea.plugin.api.ClassApiExporterHelper
 import com.itangcent.idea.plugin.api.cache.DefaultFileApiCacheRepository
@@ -618,7 +620,14 @@ open class SuvApiExporter {
                         apiResponse.content = responseContent
                         apiResponses.addApiResponse("200", apiResponse)
                     }
-                    logger!!.info(writeJson(openApi))
+                    val openApiMetadata = writeJson(openApi)
+                    val httpClient = ApacheHttpClient()
+                    val post = httpClient.post("http://localhost:8080/test/createApi").body(mapOf("api" to openApiMetadata).toJson())
+                    val response = post.call()
+                    if (200 != response.code()) {
+                        logger!!.error("上传api信息失败:"+response.string())
+                    }
+                    logger!!.info(openApiMetadata)
                 }
             } catch (e: Exception) {
                 logger!!.traceError("get project git branch fail", e)
