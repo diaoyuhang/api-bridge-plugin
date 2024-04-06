@@ -60,12 +60,10 @@ import com.itangcent.intellij.util.UIUtils
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import com.itangcent.suv.http.HttpClientProvider
 import com.itangcent.utils.GitUtils
-import io.swagger.v3.core.util.PrimitiveType
 import io.swagger.v3.oas.models.*
 import io.swagger.v3.oas.models.info.Info
 import io.swagger.v3.oas.models.media.Content
 import io.swagger.v3.oas.models.media.MediaType
-import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.HeaderParameter
 import io.swagger.v3.oas.models.parameters.Parameter
 import io.swagger.v3.oas.models.parameters.PathParameter
@@ -432,207 +430,269 @@ open class SuvApiExporter {
                 val openApiList = mutableListOf<OpenAPI>()
 
                 for (request in docs.filterAs<Request>()) {
-                    val openApi = buildOpenApi()
+                    val openApi = buildOpenApi("项目名", gitBranchName)
                     openApiList.add(openApi)
 
                     val someAnnotationsInfo = request.someAnnotationsInfo
                     val methodAnnoInfo = someAnnotationsInfo!![ElementType.METHOD.toString()] as Map<*, *>
-                    val classAnnoInfo = someAnnotationsInfo!![ElementType.TYPE.toString()] as Map<*, *>
+                    val classAnnoInfo = someAnnotationsInfo[ElementType.TYPE.toString()] as Map<*, *>
 
                     if (methodAnnoInfo.contains(Attrs.DEPRECATED_ATTR)) {
                         operation.deprecated = true
                     }
+                    setRequestMethodInfo(openApi, request, operation)
 
-                    if (methodAnnoInfo.contains(Attrs.OPERATION_ATTR)) {
-                        val operationInfo = methodAnnoInfo[Attrs.OPERATION_ATTR] as Map<*, *>
-                        operation.summary = operationInfo["summary"] as? String
-                        operation.description = operationInfo["description"] as? String
+                    collectMethodOperationInfo(methodAnnoInfo, operation)
+                    collectClassTagInfo(classAnnoInfo, operation, openApi)
 
-                    }
+                    operation.parameters = collectHeaderParam(request)
+                    operation.parameters.addAll(collectPathParam(request))
 
-                    if (classAnnoInfo.contains(Attrs.TAG_ATTR)) {
-                        val tagInfo = classAnnoInfo[Attrs.TAG_ATTR] as Map<*, *>
-                        val tagStrList = mutableListOf<String>()
-                        val name = tagInfo["name"] as String
-                        val description = tagInfo["description"] as String
-                        tagStrList.add(name)
-                        operation.tags = tagStrList
-                        val tag = Tag()
-                        tag.name = name
-                        tag.description = description
-
-                        openApi.tags = listOf(tag)
-                    }
-
-                    operation.parameters =
-                        request.headers?.mapNotNull { header ->
-                            if (!header.name.equals("Content-Type")) {
-                                val parameter = HeaderParameter().apply {
-                                    name = header.name
-                                    required = header.required
-
-                                    val type = (header.exts()?.get("javaType") as SingleDuckType).canonicalText()
-                                    schema = SchemaBuildUtil.getTypeSchemaBuild(type)
-                                        .buildSchema(header, null, linkedMapOf(), null)
-
-                                    header.exts()
-                                }
-                                parameter
-                            } else {
-                                null
-                            }
-                        } ?: mutableListOf()
-
-                    operation.parameters.addAll(request.paths?.mapNotNull { pathParam ->
-                        val param = PathParameter().apply {
-                            name = pathParam.name
-                            required = true
-                            val type = (pathParam.exts()?.get("javaType") as SingleDuckType).canonicalText()
-                            schema = SchemaBuildUtil.getTypeSchemaBuild(type)
-                                .buildSchema(pathParam, null, linkedMapOf(), null)
-                        }
-                        param
-                    } ?: mutableListOf())
                     val typeSet = mutableSetOf<String>()
-                    operation.parameters.addAll(request.querys?.mapNotNull { queryParam ->
-                        val exts = queryParam.exts()
-                        val type = (exts?.get("javaType") as SingleDuckType).canonicalText()
-                        if (type != null && !typeSet.contains(type)) {
-                            val param = QueryParameter().apply {
-                                var raw = exts["raw"]!!
-                                required = queryParam.required
-                                name = if (raw is LinkedHashMap<*, *>) {
-                                    schema = SchemaBuildUtil.obtainTypeSchema(raw, linkedMapOf())
-                                    typeSet.add(type)
-                                    type
-                                } else {
-                                    schema = SchemaBuildUtil.getTypeSchemaBuild(type).buildSchema(
-                                        raw, null,
-                                        linkedMapOf(), type
-                                    )
-                                    queryParam.name
-                                }
-                                val fieldAnnoInfo = someAnnotationsInfo!![ElementType.FIELD.toString()] as Map<*, *>
-                                if (fieldAnnoInfo.contains(queryParam.name)) {
-                                    val fieldMapInfo = fieldAnnoInfo[queryParam.name] as LinkedHashMap<String, *>
-                                    AnnoInfoAssemble.SchemaAnnoAssemble.assembleInfo(schema,fieldMapInfo)
-                                }
-                            }
-                            param
-                        } else {
-                            null
-                        }
-                    } ?: mutableListOf())
-
-                    operation.parameters.addAll(request.formParams?.mapNotNull { formParam ->
-                        val exts = formParam.exts()
-                        val type = (exts?.get("javaType") as SingleDuckType).canonicalText()
-                        if (type != null && !typeSet.contains(type)) {
-                            val param = QueryParameter().apply {
-                                var param = exts["raw"]
-                                if (param is LinkedHashMap<*, *>) {
-                                    name = type
-                                    schema = SchemaBuildUtil.obtainTypeSchema(param, linkedMapOf())
-                                    typeSet.add(type)
-                                } else {
-                                    schema = SchemaBuildUtil.getTypeSchemaBuild(type)
-                                        .buildSchema(formParam, null, linkedMapOf(), null)
-                                }
-
-                            }
-                            param
-                        } else {
-                            null
-                        }
-                    } ?: mutableListOf())
+                    operation.parameters.addAll(collectQueryParam(request, typeSet, someAnnotationsInfo))
+                    operation.parameters.addAll(collectFormParam(request, typeSet, someAnnotationsInfo))
 
                     //构建schema
-                    var obtainTypeSchema = SchemaBuildUtil.obtainTypeSchema(request.body, linkedMapOf())
+                    val responseContent = setRequestResponseBodySchema(request, operation)
+                    collectResponseStatusInfo(methodAnnoInfo, operation, responseContent)
 
-                    val methodConsumes: Array<String> = arrayOf("application/json")
-                    val methodProduces: Array<String> = arrayOf("*/*")
-                    val headers: Array<String> = emptyArray()
-
-                    val methodAttributes = MethodAttributes(
-                        "application/json",
-                        "*/*",
-                        methodConsumes,
-                        methodProduces,
-                        headers,
-                        Locale.CHINA
-                    )
-                    val content = Content()
-                    val requestBodyInfo = RequestBodyInfo()
-                    val requestBody = RequestBody()
-                    requestBodyInfo.requestBody = requestBody
-                    requestBody.content = content
-                    operation.requestBody = requestBody
-
-                    for (value in methodAttributes.methodConsumes) {
-                        val mediaTypeObject = MediaType()
-                        mediaTypeObject.schema = obtainTypeSchema
-                        content.addMediaType(value, mediaTypeObject)
-                    }
-
-                    val paths: Paths = openApi.paths
-                    val pathItemObject = PathItem();
-                    if (HttpMethod.GET.equals(request.method)) {
-                        pathItemObject.get = operation
-                    } else if (HttpMethod.POST.equals(request.method)) {
-                        pathItemObject.post = operation
-                    } else if (HttpMethod.DELETE.equals(request.method)) {
-                        pathItemObject.delete = operation
-                    } else {
-                        pathItemObject.put = operation
-                    }
-                    paths.addPathItem(request.path?.url(), pathItemObject)
-
-
-                    val responseSchema =
-                        request.response?.get(0)?.let { SchemaBuildUtil.obtainTypeSchema(it.body, linkedMapOf()) }
-                    val responseContent = Content()
-                    for (value in methodAttributes.methodProduces) {
-                        val mediaTypeObject = MediaType()
-                        mediaTypeObject.schema = responseSchema
-                        responseContent.addMediaType(value, mediaTypeObject)
-                    }
-
-                    if (methodAnnoInfo.contains(Attrs.API_RESPONSES_ATTR)) {
-                        val apiResponses = ApiResponses()
-                        val apiResponsesInfo = methodAnnoInfo[Attrs.API_RESPONSES_ATTR] as Map<*, *>
-                        val apiResponseList = apiResponsesInfo["value"] as Array<*>
-                        operation.responses = apiResponses
-
-                        for (objRes in apiResponseList) {
-                            val ar = objRes as LinkedHashMap<*, *>
-
-                            val apiResponse = ApiResponse()
-                            val httpCode = ar["responseCode"] as String
-                            val description = ar["description"] as String
-                            apiResponse.description = description
-                            apiResponse.content = responseContent
-                            apiResponses.addApiResponse(httpCode, apiResponse)
-                        }
-                    } else {
-                        val apiResponses = ApiResponses()
-                        operation.responses = apiResponses
-                        val apiResponse = ApiResponse()
-                        apiResponse.content = responseContent
-                        apiResponses.addApiResponse("200", apiResponse)
-                    }
-                    val openApiMetadata = writeJson(openApi)
-                    val httpClient = ApacheHttpClient()
-                    val post = httpClient.post("http://localhost:8080/test/createApi").body(mapOf("api" to openApiMetadata).toJson())
-                    val response = post.call()
-                    if (200 != response.code()) {
-                        logger!!.error("上传api信息失败:"+response.string())
-                    }
+                    val openApiMetadata = uploadOpenApiMetaData(openApi)
                     logger!!.info(openApiMetadata)
                 }
             } catch (e: Exception) {
                 logger!!.traceError("get project git branch fail", e)
             }
         }
+
+        private fun uploadOpenApiMetaData(openApi: OpenAPI): String {
+            val openApiMetadata = writeJson(openApi)
+            val httpClient = ApacheHttpClient()
+            val post =
+                httpClient.post("http://localhost:8080/test/createApi").body(mapOf("api" to openApiMetadata).toJson())
+            val response = post.call()
+            if (200 != response.code()) {
+                logger!!.error("上传api信息失败:" + response.string())
+            }
+            return openApiMetadata
+        }
+
+        private fun setRequestResponseBodySchema(
+            request: Request,
+            operation: Operation
+        ): Content {
+            val requestSchema = SchemaBuildUtil.obtainTypeSchema(request.body, linkedMapOf())
+            val responseSchema =
+                request.response?.get(0)?.let { SchemaBuildUtil.obtainTypeSchema(it.body, linkedMapOf()) }
+
+            val methodConsumes: Array<String> = arrayOf("application/json")
+            val methodProduces: Array<String> = arrayOf("*/*")
+            val headers: Array<String> = emptyArray()
+
+            val methodAttributes = MethodAttributes(
+                "application/json",
+                "*/*",
+                methodConsumes,
+                methodProduces,
+                headers,
+                Locale.CHINA
+            )
+            val content = Content()
+            val requestBodyInfo = RequestBodyInfo()
+            val requestBody = RequestBody()
+            requestBodyInfo.requestBody = requestBody
+            requestBody.content = content
+            operation.requestBody = requestBody
+
+            for (value in methodAttributes.methodConsumes) {
+                val mediaTypeObject = MediaType()
+                mediaTypeObject.schema = requestSchema
+                content.addMediaType(value, mediaTypeObject)
+            }
+
+            val responseContent = Content()
+            for (value in methodAttributes.methodProduces) {
+                val mediaTypeObject = MediaType()
+                mediaTypeObject.schema = responseSchema
+                responseContent.addMediaType(value, mediaTypeObject)
+            }
+            return responseContent
+        }
+
+        private fun setRequestMethodInfo(
+            openApi: OpenAPI,
+            request: Request,
+            operation: Operation
+        ) {
+            val paths: Paths = openApi.paths
+            val pathItemObject = PathItem();
+            if (HttpMethod.GET == request.method) {
+                pathItemObject.get = operation
+            } else if (HttpMethod.POST == request.method) {
+                pathItemObject.post = operation
+            } else if (HttpMethod.DELETE == request.method) {
+                pathItemObject.delete = operation
+            } else {
+                pathItemObject.put = operation
+            }
+            paths.addPathItem(request.path?.url(), pathItemObject)
+        }
+
+        private fun collectResponseStatusInfo(
+            methodAnnoInfo: Map<*, *>,
+            operation: Operation,
+            responseContent: Content
+        ) {
+            if (methodAnnoInfo.contains(Attrs.API_RESPONSES_ATTR)) {
+                val apiResponses = ApiResponses()
+                val apiResponsesInfo = methodAnnoInfo[Attrs.API_RESPONSES_ATTR] as Map<*, *>
+                val apiResponseList = apiResponsesInfo["value"] as Array<*>
+                operation.responses = apiResponses
+
+                for (objRes in apiResponseList) {
+                    val ar = objRes as LinkedHashMap<*, *>
+
+                    val apiResponse = ApiResponse()
+                    val httpCode = ar["responseCode"] as String
+                    val description = ar["description"] as String
+                    apiResponse.description = description
+                    apiResponse.content = responseContent
+                    apiResponses.addApiResponse(httpCode, apiResponse)
+                }
+            } else {
+                val apiResponses = ApiResponses()
+                operation.responses = apiResponses
+                val apiResponse = ApiResponse()
+                apiResponse.content = responseContent
+                apiResponses.addApiResponse("200", apiResponse)
+            }
+        }
+
+        private fun collectMethodOperationInfo(methodAnnoInfo: Map<*, *>, operation: Operation) {
+            if (methodAnnoInfo.contains(Attrs.OPERATION_ATTR)) {
+                val operationInfo = methodAnnoInfo[Attrs.OPERATION_ATTR] as Map<*, *>
+                operation.summary = operationInfo["summary"] as? String
+                operation.description = operationInfo["description"] as? String
+
+            }
+        }
+
+        private fun collectClassTagInfo(
+            classAnnoInfo: Map<*, *>,
+            operation: Operation,
+            openApi: OpenAPI
+        ) {
+            if (classAnnoInfo.contains(Attrs.TAG_ATTR)) {
+                val tagInfo = classAnnoInfo[Attrs.TAG_ATTR] as Map<*, *>
+                val tagStrList = mutableListOf<String>()
+                val name = tagInfo["name"] as String
+                val description = tagInfo["description"] as String
+                tagStrList.add(name)
+                operation.tags = tagStrList
+                val tag = Tag()
+                tag.name = name
+                tag.description = description
+
+                openApi.tags = listOf(tag)
+            }
+        }
+
+        private fun collectFormParam(
+            request: Request,
+            typeSet: MutableSet<String>,
+            someAnnotationsInfo: LinkedHashMap<String, Any?>?
+        ) = request.formParams?.mapNotNull { formParam ->
+            val exts = formParam.exts()
+            val type = (exts?.get("javaType") as? SingleDuckType)?.canonicalText()
+            if (type != null && !typeSet.contains(type)) {
+                val param = QueryParameter().apply {
+                    val raw = exts["raw"]!!
+                    required = formParam.required
+                    name = if (raw is LinkedHashMap<*, *>) {
+                        schema = SchemaBuildUtil.obtainTypeSchema(raw, linkedMapOf())
+                        typeSet.add(type)
+                        type
+                    } else {
+                        schema = SchemaBuildUtil.getTypeSchemaBuild(type).buildSchema(
+                            raw, null,
+                            linkedMapOf(), type
+                        )
+                        formParam.name
+                    }
+                    val fieldAnnoInfo = someAnnotationsInfo!![ElementType.FIELD.toString()] as Map<*, *>
+                    if (fieldAnnoInfo.contains(formParam.name)) {
+                        val fieldMapInfo = fieldAnnoInfo[formParam.name] as LinkedHashMap<String, *>
+                        AnnoInfoAssemble.SchemaAnnoAssemble.assembleInfo(schema, fieldMapInfo)
+                    }
+                }
+                param
+            } else {
+                null
+            }
+        } ?: mutableListOf()
+
+        private fun collectQueryParam(
+            request: Request,
+            typeSet: MutableSet<String>,
+            someAnnotationsInfo: LinkedHashMap<String, Any?>?
+        ) = request.querys?.mapNotNull { queryParam ->
+            val exts = queryParam.exts()
+            val type = (exts?.get("javaType") as? SingleDuckType)?.canonicalText()
+            if (type != null && !typeSet.contains(type)) {
+                val param = QueryParameter().apply {
+                    val raw = exts["raw"]!!
+                    required = queryParam.required
+                    name = if (raw is LinkedHashMap<*, *>) {
+                        schema = SchemaBuildUtil.obtainTypeSchema(raw, linkedMapOf())
+                        typeSet.add(type)
+                        type
+                    } else {
+                        schema = SchemaBuildUtil.getTypeSchemaBuild(type).buildSchema(
+                            raw, null,
+                            linkedMapOf(), type
+                        )
+                        queryParam.name
+                    }
+                    val fieldAnnoInfo = someAnnotationsInfo!![ElementType.FIELD.toString()] as Map<*, *>
+                    if (fieldAnnoInfo.contains(queryParam.name)) {
+                        val fieldMapInfo = fieldAnnoInfo[queryParam.name] as LinkedHashMap<String, *>
+                        AnnoInfoAssemble.SchemaAnnoAssemble.assembleInfo(schema, fieldMapInfo)
+                    }
+                }
+                param
+            } else {
+                null
+            }
+        } ?: mutableListOf()
+
+        private fun collectPathParam(request: Request) = request.paths?.map { pathParam ->
+            val param = PathParameter().apply {
+                name = pathParam.name
+                required = true
+                val type = (pathParam.exts()?.get("javaType") as SingleDuckType).canonicalText()
+                schema = SchemaBuildUtil.getTypeSchemaBuild(type)
+                    .buildSchema(pathParam, null, linkedMapOf(), null)
+            }
+            param
+        } ?: mutableListOf()
+
+        private fun collectHeaderParam(request: Request): List<Parameter> =
+            request.headers?.mapNotNull { header ->
+                if (!header.name.equals("Content-Type")) {
+                    val parameter = HeaderParameter().apply {
+                        name = header.name
+                        required = header.required
+
+                        schema = header.value?.javaClass?.let {
+                            SchemaBuildUtil.getTypeSchemaBuild(it.name)
+                                .buildSchema(header, null, linkedMapOf(), null)
+                        }
+                        header.exts()
+                    }
+                    parameter
+                } else {
+                    null
+                }
+            } ?: mutableListOf()
 
         private fun writeJson(openAPI: OpenAPI): String {
             val springDocConfigProperties = SpringDocConfigProperties()
@@ -641,12 +701,13 @@ open class SuvApiExporter {
             return objectMapperProvider.jsonMapper().writerFor(openAPI.javaClass).writeValueAsString(openAPI)
         }
 
-        private fun buildOpenApi(): OpenAPI {
+        private fun buildOpenApi(title: String, version: String): OpenAPI {
             val openApi = OpenAPI()
             openApi.components = Components()
             openApi.paths = Paths()
 
-            openApi.info = Info().title(Constants.DEFAULT_TITLE).version(Constants.DEFAULT_VERSION)
+            openApi.info = Info().title(title).version(version)
+            openApi.servers = mutableListOf()
             return openApi
         }
 
