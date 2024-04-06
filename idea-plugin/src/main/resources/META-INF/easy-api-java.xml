@@ -113,6 +113,11 @@
                              id="easyapi.settings.EasyApiConfigurable.Other"
                              instance="com.itangcent.idea.plugin.configurable.EasyApiOtherConfigurable"/>
 
+        <projectConfigurable groupId="easyapi.settings.EasyApiConfigurable"
+                             displayName="RemoteServer"
+                             id="easyapi.settings.EasyApiConfigurable.ServerConfig"
+                             instance="com.itangcent.idea.plugin.configurable.RemoteServerConfigurable"/>
+
         <applicationService id="easyapi.setting.application.binder"
                             serviceImplementation="com.itangcent.idea.plugin.settings.xml.ApplicationSettingsComponent"/>
 

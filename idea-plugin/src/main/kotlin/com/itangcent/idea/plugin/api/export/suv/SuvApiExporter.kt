@@ -30,6 +30,7 @@ import com.itangcent.idea.plugin.api.export.postman.*
 import com.itangcent.idea.plugin.api.export.swagger.AnnoInfoAssemble
 import com.itangcent.idea.plugin.api.export.swagger.SchemaBuildUtil
 import com.itangcent.idea.plugin.config.RecommendConfigReader
+import com.itangcent.idea.plugin.config.RemoteServerConfig
 import com.itangcent.idea.plugin.dialog.SuvApiExportDialog
 import com.itangcent.idea.plugin.rule.SuvRuleParser
 import com.itangcent.idea.plugin.settings.SettingBinder
@@ -465,10 +466,17 @@ open class SuvApiExporter {
         }
 
         private fun uploadOpenApiMetaData(openApi: OpenAPI): String {
+            val token = RemoteServerConfig.configMap["token"]
+            val serverId = RemoteServerConfig.configMap["项目.id"]
+            if (StringUtils.isBlank(token)||StringUtils.isBlank(serverId )) {
+                throw RuntimeException("token or serverId is empty")
+            }
             val openApiMetadata = writeJson(openApi)
             val httpClient = ApacheHttpClient()
             val post =
-                httpClient.post("http://localhost:8080/test/createApi").body(mapOf("api" to openApiMetadata).toJson())
+                httpClient.post("http://localhost:8080/test/createApi")
+                    .header("token",token).header("serverId",serverId)
+                    .body(mapOf("api" to openApiMetadata).toJson())
             val response = post.call()
             if (200 != response.code()) {
                 logger!!.error("上传api信息失败:" + response.string())
