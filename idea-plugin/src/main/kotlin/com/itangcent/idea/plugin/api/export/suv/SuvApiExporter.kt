@@ -73,7 +73,9 @@ import io.swagger.v3.oas.models.parameters.RequestBody
 import io.swagger.v3.oas.models.responses.ApiResponse
 import io.swagger.v3.oas.models.responses.ApiResponses
 import io.swagger.v3.oas.models.tags.Tag
+import org.apache.commons.collections.CollectionUtils
 import org.apache.commons.lang3.StringUtils
+import org.apache.lucene.util.CollectionUtil
 import org.springdoc.core.*
 import org.springdoc.core.providers.ObjectMapperProvider
 import java.lang.annotation.ElementType
@@ -419,6 +421,9 @@ open class SuvApiExporter {
     }
 
     class ApiPlatformExporterAdapter : PostmanApiExporterAdapter() {
+        private val remoteServerConfig: RemoteServerConfig? by lazy {
+            project.getService(RemoteServerConfig::class.java)
+        }
         override fun doExportDocs(docs: MutableList<Doc>) {
             try {
                 val projectFilePath = project.basePath
@@ -466,17 +471,23 @@ open class SuvApiExporter {
         }
 
         private fun uploadOpenApiMetaData(openApi: OpenAPI): String {
-            val token = RemoteServerConfig.configMap["token"]
-            val serverId = RemoteServerConfig.configMap["项目.id"]
-            if (StringUtils.isBlank(token)||StringUtils.isBlank(serverId )) {
+            val token = remoteServerConfig!!.configMap["token"]
+            val serverId = remoteServerConfig!!.configMap["{${project.name}.id"]
+            if (StringUtils.isBlank(token) || StringUtils.isBlank(serverId)) {
                 throw RuntimeException("token or serverId is empty")
             }
+            if(CollectionUtils.isEmpty(openApi.tags)){
+                throw RuntimeException("@Tag is null")
+            }
+            val uuid = openApi.tags[0].description ?: throw RuntimeException("uuid is null")
+
             val openApiMetadata = writeJson(openApi)
             val httpClient = ApacheHttpClient()
             val post =
                 httpClient.post("http://localhost:8080/test/createApi")
                     .header("token",token).header("serverId",serverId)
-                    .body(mapOf("api" to openApiMetadata).toJson())
+                    .body(mapOf("api" to openApiMetadata,"uuid" to uuid).toJson())
+
             val response = post.call()
             if (200 != response.code()) {
                 logger!!.error("上传api信息失败:" + response.string())

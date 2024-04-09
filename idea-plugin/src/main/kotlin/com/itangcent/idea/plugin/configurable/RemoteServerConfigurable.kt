@@ -6,11 +6,19 @@ import com.itangcent.idea.plugin.config.RemoteServerConfig
 import com.itangcent.idea.plugin.dialog.RemoteServerConfigGUI
 import javax.swing.JComponent
 
-class RemoteServerConfigurable : SearchableConfigurable  {
+class RemoteServerConfigurable(myProject: Project) : SearchableConfigurable  {
     private val remoteServerConfigGUI = RemoteServerConfigGUI()
+    val project=myProject
 
+    private val remoteServerConfig: RemoteServerConfig = project.getService(RemoteServerConfig::class.java)
+    override fun createComponent(): JComponent {
+        if (remoteServerConfig!!.configMap["${project.name}.id"] != null) {
+            remoteServerConfigGUI.getServerId().text = remoteServerConfig!!.configMap["${project.name}.id"]
+        }
 
-    override fun createComponent(): JComponent? {
+        if (remoteServerConfig.configMap["token"] != null) {
+            remoteServerConfigGUI.getToken().text = remoteServerConfig!!.configMap["token"]
+        }
         return remoteServerConfigGUI.getRootPanel()
     }
 
@@ -20,8 +28,8 @@ class RemoteServerConfigurable : SearchableConfigurable  {
     }
 
     override fun apply() {
-        RemoteServerConfig.configMap["项目.id"] = remoteServerConfigGUI.getServerId().getText()
-        RemoteServerConfig.configMap["token"] = remoteServerConfigGUI.getToken().getText()
+        remoteServerConfig!!.configMap["${project.name}.id"] = remoteServerConfigGUI.getServerId().getText()
+        remoteServerConfig!!.configMap["token"] = remoteServerConfigGUI.getToken().getText()
     }
 
     override fun getDisplayName(): String {

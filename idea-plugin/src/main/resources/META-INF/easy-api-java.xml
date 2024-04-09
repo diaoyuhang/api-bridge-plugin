@@ -124,5 +124,7 @@
         <projectService id="easyapi.setting.project.binder"
                         serviceImplementation="com.itangcent.idea.plugin.settings.xml.ProjectSettingsComponent"/>
 
+        <applicationService serviceImplementation="com.itangcent.idea.plugin.config.RemoteServerConfig"/>
+
     </extensions>
 </idea-plugin>
