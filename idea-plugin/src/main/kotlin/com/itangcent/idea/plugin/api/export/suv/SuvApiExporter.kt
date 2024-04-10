@@ -421,9 +421,7 @@ open class SuvApiExporter {
     }
 
     class ApiPlatformExporterAdapter : PostmanApiExporterAdapter() {
-        private val remoteServerConfig: RemoteServerConfig? by lazy {
-            project.getService(RemoteServerConfig::class.java)
-        }
+
         override fun doExportDocs(docs: MutableList<Doc>) {
             try {
                 val projectFilePath = project.basePath
@@ -471,8 +469,9 @@ open class SuvApiExporter {
         }
 
         private fun uploadOpenApiMetaData(openApi: OpenAPI): String {
-            val token = remoteServerConfig!!.configMap["token"]
-            val serverId = remoteServerConfig!!.configMap["{${project.name}.id"]
+            val remoteServerConfig = RemoteServerConfig.getInstance()
+            val token = remoteServerConfig.state.configMap["token"]
+            val serverId = remoteServerConfig.state.configMap["${project.name}.id"]
             if (StringUtils.isBlank(token) || StringUtils.isBlank(serverId)) {
                 throw RuntimeException("token or serverId is empty")
             }

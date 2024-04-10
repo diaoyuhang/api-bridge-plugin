@@ -1,18 +1,24 @@
 package com.itangcent.idea.plugin.config
 
 import com.intellij.openapi.components.PersistentStateComponent
+import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 
-@State(name = "RemoteServerConfig",storages = [Storage("plugin.xml")])
-class RemoteServerConfig : PersistentStateComponent<MutableMap<String,String>> {
-    var configMap: MutableMap<String, String> = mutableMapOf()
+@State(name = "RemoteServerConfig", storages = [Storage("RemoteServerConfig.xml")])
+class RemoteServerConfig : PersistentStateComponent<ServerConfigDataState> {
+    private var serverConfigDataState = ServerConfigDataState()
 
-    override fun getState(): MutableMap<String, String> {
-        return configMap
+    companion object{
+        fun getInstance():RemoteServerConfig{
+            return ServiceManager.getService(RemoteServerConfig::class.java)
+        }
+    }
+    override fun getState(): ServerConfigDataState {
+        return serverConfigDataState
     }
 
-    override fun loadState(p0: MutableMap<String,String>) {
-        configMap=p0
+    override fun loadState(p0: ServerConfigDataState) {
+        serverConfigDataState=p0
     }
 }

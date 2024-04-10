@@ -10,14 +10,15 @@ class RemoteServerConfigurable(myProject: Project) : SearchableConfigurable  {
     private val remoteServerConfigGUI = RemoteServerConfigGUI()
     val project=myProject
 
-    private val remoteServerConfig: RemoteServerConfig = project.getService(RemoteServerConfig::class.java)
+//    private val remoteServerConfig: RemoteServerConfig = project.getService(RemoteServerConfig::class.java)
     override fun createComponent(): JComponent {
-        if (remoteServerConfig!!.configMap["${project.name}.id"] != null) {
-            remoteServerConfigGUI.getServerId().text = remoteServerConfig!!.configMap["${project.name}.id"]
+        val remoteServerConfig = RemoteServerConfig.getInstance()
+        if (remoteServerConfig.state.configMap["${project.name}.id"] != null) {
+            remoteServerConfigGUI.getServerId().text = remoteServerConfig.state.configMap["${project.name}.id"]
         }
 
-        if (remoteServerConfig.configMap["token"] != null) {
-            remoteServerConfigGUI.getToken().text = remoteServerConfig!!.configMap["token"]
+        if (remoteServerConfig.state.configMap["token"] != null) {
+            remoteServerConfigGUI.getToken().text = remoteServerConfig.state.configMap["token"]
         }
         return remoteServerConfigGUI.getRootPanel()
     }
@@ -28,8 +29,9 @@ class RemoteServerConfigurable(myProject: Project) : SearchableConfigurable  {
     }
 
     override fun apply() {
-        remoteServerConfig!!.configMap["${project.name}.id"] = remoteServerConfigGUI.getServerId().getText()
-        remoteServerConfig!!.configMap["token"] = remoteServerConfigGUI.getToken().getText()
+        val remoteServerConfig = RemoteServerConfig.getInstance()
+        remoteServerConfig.state.configMap["${project.name}.id"] = remoteServerConfigGUI.getServerId().getText()
+        remoteServerConfig.state.configMap["token"] = remoteServerConfigGUI.getToken().getText()
     }
 
     override fun getDisplayName(): String {
