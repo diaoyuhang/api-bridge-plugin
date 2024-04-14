@@ -489,7 +489,7 @@ open class SuvApiExporter {
 
             val httpClient = ApacheHttpClient()
             val post =
-                httpClient.post("$domain/test/createApi")
+                httpClient.post("$domain/api/acceptApiMetaDate")
                     .header("token",token).header("serverId",serverId)
                     .body(mapOf("apiMeteDateList" to apiMeteDateList,"uuid" to uuid).toJson())
 
