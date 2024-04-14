@@ -1,18 +1,15 @@
 package com.itangcent.idea.plugin.api.export.swagger
 
-import com.intellij.xdebugger.impl.breakpoints.getType
 import com.itangcent.common.constant.Attrs
-import com.itangcent.common.model.Request
+import com.itangcent.common.spi.SpiUtils
 import com.itangcent.idea.plugin.api.export.swagger.schema.*
-import com.itangcent.idea.plugin.api.export.swagger.schema.CustomObjSchemaBuild
-import io.swagger.v3.oas.models.Components
-import io.swagger.v3.oas.models.media.ArraySchema
+import com.itangcent.intellij.logger.Logger
 import io.swagger.v3.oas.models.media.Schema
 import org.apache.commons.lang3.StringUtils
 
 object SchemaBuildUtil {
     private val typeSchemaBuildMap = mutableMapOf<String, SchemaBuild>()
-
+    var logger: Logger? = SpiUtils.loadService(Logger::class)
     init {
         typeSchemaBuildMap.putAll(StringSchemaBuild().getType())
         typeSchemaBuildMap.putAll(BooleanSchemaBuild().getType())
@@ -71,15 +68,37 @@ object SchemaBuildUtil {
     fun getTypeSchemaBuild(fieldType: String): SchemaBuild {
         return typeSchemaBuildMap[fieldType]
             ?: run {
-                if (fieldType.endsWith(Attrs.ARRAY_TYPE_SUFFIX)||fieldType.startsWith("java.util.List")) {
+                if (fieldType.endsWith(Attrs.ARRAY_TYPE_SUFFIX) || fieldType.startsWith("java.util.List")) {
                     typeSchemaBuildMap[Attrs.ARRAY_TYPE_SUFFIX]
-                } else if (fieldType.startsWith("java.util.Map")||
-                    fieldType.startsWith("java.util.HashMap")||
-                    fieldType.startsWith("com.google.gson.JsonObject")||
-                    fieldType.startsWith("com.alibaba.fastjson2.JSONObject")){
+                } else if (fieldType.startsWith("java.util.Map") ||
+                    fieldType.startsWith("java.util.HashMap") ||
+                    fieldType.startsWith("com.google.gson.JsonObject") ||
+                    fieldType.startsWith("com.alibaba.fastjson2.JSONObject")
+                ) {
                     typeSchemaBuildMap["java.util.Map"]
                 } else {
-                    null
+                    val firstIndex = fieldType.indexOfFirst { ch -> ch.toString() == Attrs.LT }
+                    val className = if (firstIndex > -1) {
+                        fieldType.subSequence(0, firstIndex).toString()
+                    } else {
+                        fieldType
+                    }
+
+                    try {
+                        val clazz = Class.forName(className)
+                        if (Collection::class.java.isAssignableFrom(clazz)) {
+                            typeSchemaBuildMap["java.util.Map"]
+                        } else if (Map::class.java.isAssignableFrom(clazz)) {
+                            typeSchemaBuildMap["java.util.List"]
+                        } else {
+                            null
+                        }
+                    } catch (e: Exception) {
+                        logger?.error("error getTypeSchemaBuild:"+e.message)
+                        null
+                    } finally {
+                        null
+                    }
                 }
             }
             ?: CustomObjSchemaBuild()
