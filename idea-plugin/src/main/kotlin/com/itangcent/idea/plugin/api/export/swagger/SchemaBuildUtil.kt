@@ -87,9 +87,9 @@ object SchemaBuildUtil {
                     try {
                         val clazz = Class.forName(className)
                         if (Collection::class.java.isAssignableFrom(clazz)) {
-                            typeSchemaBuildMap["java.util.Map"]
-                        } else if (Map::class.java.isAssignableFrom(clazz)) {
                             typeSchemaBuildMap["java.util.List"]
+                        } else if (Map::class.java.isAssignableFrom(clazz)) {
+                            typeSchemaBuildMap["java.util.Map"]
                         } else {
                             null
                         }

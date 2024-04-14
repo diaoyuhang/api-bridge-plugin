@@ -24,7 +24,7 @@ class ArraySchemaBuild : SchemaBuild {
             requestBody as List<Any>
         }
 
-        arraySchema.items = if(fieldType!=null) {
+        arraySchema.items = if (fieldType != null) {
              assembleSchema(fieldType, body, allObjMap)
         }else{
              SchemaBuildUtil.obtainTypeSchema(body[0],allObjMap)
