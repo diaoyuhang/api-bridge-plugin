@@ -20,6 +20,10 @@ class RemoteServerConfigurable(myProject: Project) : SearchableConfigurable  {
         if (remoteServerConfig.state.configMap["token"] != null) {
             remoteServerConfigGUI.getToken().text = remoteServerConfig.state.configMap["token"]
         }
+
+        if (remoteServerConfig.state.configMap["domain"] != null) {
+            remoteServerConfigGUI.getDomain().text = remoteServerConfig.state.configMap["domain"]
+        }
         return remoteServerConfigGUI.getRootPanel()
     }
 
@@ -30,8 +34,9 @@ class RemoteServerConfigurable(myProject: Project) : SearchableConfigurable  {
 
     override fun apply() {
         val remoteServerConfig = RemoteServerConfig.getInstance()
-        remoteServerConfig.state.configMap["${project.name}.id"] = remoteServerConfigGUI.getServerId().getText()
-        remoteServerConfig.state.configMap["token"] = remoteServerConfigGUI.getToken().getText()
+        remoteServerConfig.state.configMap["${project.name}.id"] = remoteServerConfigGUI.getServerId().text
+        remoteServerConfig.state.configMap["token"] = remoteServerConfigGUI.getToken().text
+        remoteServerConfig.state.configMap["domain"] = remoteServerConfigGUI.getDomain().text
     }
 
     override fun getDisplayName(): String {

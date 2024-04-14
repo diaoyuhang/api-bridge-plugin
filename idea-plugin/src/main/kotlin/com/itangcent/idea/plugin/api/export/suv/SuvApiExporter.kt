@@ -459,39 +459,45 @@ open class SuvApiExporter {
                     //构建schema
                     val responseContent = setRequestResponseBodySchema(request, operation)
                     collectResponseStatusInfo(methodAnnoInfo, operation, responseContent)
-
-                    val openApiMetadata = uploadOpenApiMetaData(openApi)
-                    logger!!.info(openApiMetadata)
                 }
+                val openApiMetadata = uploadOpenApiMetaData(openApiList)
+                logger!!.info(openApiMetadata.toString())
             } catch (e: Exception) {
                 logger!!.traceError("get project git branch fail", e)
             }
         }
 
-        private fun uploadOpenApiMetaData(openApi: OpenAPI): String {
+        private fun uploadOpenApiMetaData(openApiList: MutableList<OpenAPI>): MutableList<String> {
             val remoteServerConfig = RemoteServerConfig.getInstance()
             val token = remoteServerConfig.state.configMap["token"]
             val serverId = remoteServerConfig.state.configMap["${project.name}.id"]
-            if (StringUtils.isBlank(token) || StringUtils.isBlank(serverId)) {
-                throw RuntimeException("token or serverId is empty")
-            }
-            if(CollectionUtils.isEmpty(openApi.tags)){
-                throw RuntimeException("@Tag is null")
-            }
-            val uuid = openApi.tags[0].description ?: throw RuntimeException("uuid is null")
+            val domain = remoteServerConfig.state.configMap["domain"]
 
-            val openApiMetadata = writeJson(openApi)
+            var uuid = ""
+            val apiMeteDateList = mutableListOf<String>()
+            for (openApi in openApiList) {
+                if (StringUtils.isBlank(token) || StringUtils.isBlank(serverId)) {
+                    throw RuntimeException("token or serverId is empty")
+                }
+                if(CollectionUtils.isEmpty(openApi.tags)){
+                    throw RuntimeException("@Tag is null")
+                }
+                apiMeteDateList.add(writeJson(openApi))
+                uuid = openApi.tags[0].description ?: throw RuntimeException("uuid is null")
+            }
+
+
             val httpClient = ApacheHttpClient()
             val post =
-                httpClient.post("http://localhost:8080/test/createApi")
+                httpClient.post("$domain/test/createApi")
                     .header("token",token).header("serverId",serverId)
-                    .body(mapOf("api" to openApiMetadata,"uuid" to uuid).toJson())
+                    .body(mapOf("apiMeteDateList" to apiMeteDateList,"uuid" to uuid).toJson())
 
             val response = post.call()
             if (200 != response.code()) {
                 logger!!.error("上传api信息失败:" + response.string())
             }
-            return openApiMetadata
+            return apiMeteDateList
         }
 
         private fun setRequestResponseBodySchema(
