@@ -463,7 +463,7 @@ open class SuvApiExporter {
                 val openApiMetadata = uploadOpenApiMetaData(openApiList)
                 logger!!.info(openApiMetadata.toString())
             } catch (e: Exception) {
-                logger!!.traceError("get project git branch fail", e)
+                logger!!.traceError("export openapi error", e)
             }
         }
 
@@ -473,7 +473,8 @@ open class SuvApiExporter {
             val serverId = remoteServerConfig.state.configMap["${project.name}.id"]
             val domain = remoteServerConfig.state.configMap["domain"]
 
-            var uuid = ""
+            var tagId = ""
+            var tagName = ""
             val apiMeteDateList = mutableListOf<String>()
             for (openApi in openApiList) {
                 if (StringUtils.isBlank(token) || StringUtils.isBlank(serverId)) {
@@ -482,16 +483,21 @@ open class SuvApiExporter {
                 if(CollectionUtils.isEmpty(openApi.tags)){
                     throw RuntimeException("@Tag is null")
                 }
+
                 apiMeteDateList.add(writeJson(openApi))
-                uuid = openApi.tags[0].description ?: throw RuntimeException("uuid is null")
+                tagId = openApi.tags[0].description ?: throw RuntimeException("uuid is null")
+                tagName = openApi.tags[0].name
             }
 
 
             val httpClient = ApacheHttpClient()
             val post =
                 httpClient.post("$domain/api/acceptApiMetaDate")
-                    .header("token",token).header("serverId",serverId)
-                    .body(mapOf("apiMeteDateList" to apiMeteDateList,"uuid" to uuid).toJson())
+                    .header("token", token)
+                    .body(mapOf("apiMeteDateList" to apiMeteDateList,
+                        "tagId" to tagId,
+                        "tagName" to tagName,
+                        "projectId" to serverId).toJson())
 
             val response = post.call()
             if (200 != response.code()) {
@@ -549,14 +555,14 @@ open class SuvApiExporter {
         ) {
             val paths: Paths = openApi.paths
             val pathItemObject = PathItem();
-            if (HttpMethod.GET == request.method) {
-                pathItemObject.get = operation
+            if (HttpMethod.PUT == request.method) {
+                pathItemObject.put = operation
             } else if (HttpMethod.POST == request.method) {
                 pathItemObject.post = operation
             } else if (HttpMethod.DELETE == request.method) {
                 pathItemObject.delete = operation
             } else {
-                pathItemObject.put = operation
+                pathItemObject.get = operation
             }
             paths.addPathItem(request.path?.url(), pathItemObject)
         }
