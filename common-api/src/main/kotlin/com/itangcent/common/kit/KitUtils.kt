@@ -3,6 +3,7 @@ package com.itangcent.common.kit
 import com.itangcent.common.spi.SpiUtils
 import com.itangcent.utils.DefaultJsonSupport
 import com.itangcent.utils.JsonSupport
+import kotlin.reflect.KClass
 
 private val jsonSupport by lazy { SpiUtils.loadService(JsonSupport::class) ?: DefaultJsonSupport }
 
@@ -15,6 +16,10 @@ fun Any?.toJson(): String? {
         return this
     }
     return jsonSupport.toJson(this)
+}
+
+fun <T : Any> String.fromJson(cls: KClass<T>): T {
+    return jsonSupport.fromJson(this,cls)
 }
 
 fun String.headLine(): String? {

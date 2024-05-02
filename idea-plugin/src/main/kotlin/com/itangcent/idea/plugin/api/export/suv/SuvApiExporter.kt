@@ -7,6 +7,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiMethod
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.constant.HttpMethod
+import com.itangcent.common.dto.ResultDto
+import com.itangcent.common.kit.fromJson
 import com.itangcent.common.kit.toJson
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Doc
@@ -63,8 +65,10 @@ import com.itangcent.suv.http.HttpClientProvider
 import com.itangcent.utils.GitUtils
 import io.swagger.v3.oas.models.*
 import io.swagger.v3.oas.models.info.Info
+import io.swagger.v3.oas.models.media.BinarySchema
 import io.swagger.v3.oas.models.media.Content
 import io.swagger.v3.oas.models.media.MediaType
+import io.swagger.v3.oas.models.media.StringSchema
 import io.swagger.v3.oas.models.parameters.HeaderParameter
 import io.swagger.v3.oas.models.parameters.Parameter
 import io.swagger.v3.oas.models.parameters.PathParameter
@@ -430,10 +434,10 @@ open class SuvApiExporter {
                     throw RuntimeException("git branch is empty")
                 }
 
-                val operation = Operation()
                 val openApiList = mutableListOf<OpenAPI>()
 
                 for (request in docs.filterAs<Request>()) {
+                    val operation = Operation()
                     val openApi = buildOpenApi("项目名", gitBranchName)
                     openApiList.add(openApi)
 
@@ -502,6 +506,13 @@ open class SuvApiExporter {
             val response = post.call()
             if (200 != response.code()) {
                 logger!!.error("上传api信息失败:" + response.string())
+            }else{
+                val fromJson = response.string()!!.fromJson(ResultDto::class)
+                if(200 == fromJson.code){
+                    logger!!.info("上传成功")
+                }else{
+                    logger!!.error("上传失败，${fromJson.msg}")
+                }
             }
             return apiMeteDateList
         }
@@ -648,7 +659,7 @@ open class SuvApiExporter {
                         )
                         formParam.name
                     }
-                    val fieldAnnoInfo = someAnnotationsInfo!![ElementType.FIELD.toString()] as Map<*, *>
+                    val fieldAnnoInfo = someAnnotationsInfo!![ElementType.FIELD.toString()] as? Map<*, *> ?: emptyMap<Any,Any>()
                     if (fieldAnnoInfo.contains(formParam.name)) {
                         val fieldMapInfo = fieldAnnoInfo[formParam.name] as LinkedHashMap<String, *>
                         AnnoInfoAssemble.SchemaAnnoAssemble.assembleInfo(schema, fieldMapInfo)
@@ -656,7 +667,15 @@ open class SuvApiExporter {
                 }
                 param
             } else {
-                null
+                if ("file" == formParam.type) {
+                    val queryParameter = QueryParameter()
+                    queryParameter.name=formParam.name
+                    queryParameter.required=formParam.required
+                    queryParameter.schema = BinarySchema()
+                    queryParameter
+                }else {
+                    null
+                }
             }
         } ?: mutableListOf()
 
@@ -682,7 +701,7 @@ open class SuvApiExporter {
                         )
                         queryParam.name
                     }
-                    val fieldAnnoInfo = someAnnotationsInfo!![ElementType.FIELD.toString()] as Map<*, *>
+                    val fieldAnnoInfo = someAnnotationsInfo!![ElementType.FIELD.toString()] as? Map<*, *> ?: emptyMap<Any,Any>()
                     if (fieldAnnoInfo.contains(queryParam.name)) {
                         val fieldMapInfo = fieldAnnoInfo[queryParam.name] as LinkedHashMap<String, *>
                         AnnoInfoAssemble.SchemaAnnoAssemble.assembleInfo(schema, fieldMapInfo)

@@ -4,6 +4,7 @@ import com.itangcent.common.constant.Attrs
 import com.itangcent.common.spi.SpiUtils
 import com.itangcent.idea.plugin.api.export.swagger.schema.*
 import com.itangcent.intellij.logger.Logger
+import io.swagger.v3.oas.models.media.MapSchema
 import io.swagger.v3.oas.models.media.Schema
 import org.apache.commons.lang3.StringUtils
 
@@ -32,18 +33,28 @@ object SchemaBuildUtil {
 
         if (requestBody is LinkedHashMap<*, *>) {
             var body = requestBody as LinkedHashMap<String, *>
-            val schemaBuild = if(body.contains(StringUtils.EMPTY)){
-                body = body[StringUtils.EMPTY]?.let { it as LinkedHashMap<String, *> } ?: linkedMapOf<String, Any>()
+            if (body.contains(StringUtils.EMPTY)) {
+                val mapSchema = MapSchema()
+                val bodyValue = body[StringUtils.EMPTY] ?: Object()
 
-                getTypeSchemaBuild("java.util.Map")
-            }else{
-                 getTypeSchemaBuild(requestBody[Attrs.QUALIFIED_CLASS_NAME_ATTR] as String)
+                val type: String =
+                    if (bodyValue is LinkedHashMap<*, *> && bodyValue.containsKey(Attrs.QUALIFIED_CLASS_NAME_ATTR)) {
+                        bodyValue[Attrs.QUALIFIED_CLASS_NAME_ATTR].toString()
+                    } else {
+                        bodyValue::class.java.name
+                    }
+
+                mapSchema.additionalProperties = obtainTypeSchema(bodyValue, allObjMap)
+                return mapSchema
+            } else {
+                val type = requestBody[Attrs.QUALIFIED_CLASS_NAME_ATTR] ?: requestBody::class.java.name
+                val schemaBuild = getTypeSchemaBuild(type as String)
+                return schemaBuild.buildSchema(body, null, allObjMap, null)
             }
-            return schemaBuild.buildSchema(body, null, allObjMap, null)
         } else if (requestBody is ArrayList<*>) {
             val arraySchemaBuild = getTypeSchemaBuild("[]")
             return arraySchemaBuild.buildSchema(requestBody, null, allObjMap, null)
-        }else{
+        } else {
             return getTypeSchemaBuild(requestBody.javaClass.name).buildSchema(requestBody, null, allObjMap, null)
         }
     }
