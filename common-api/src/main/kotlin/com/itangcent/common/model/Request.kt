@@ -22,6 +22,7 @@ open class Request : Doc() {
      * All of the headers.
      */
     var headers: MutableList<Header>? = null
+    var cookies: MutableList<Cookie>? = null
 
     var paths: MutableList<PathParam>? = null
 

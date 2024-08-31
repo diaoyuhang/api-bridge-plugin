@@ -74,6 +74,10 @@ class PostmanRequestBuilderListener : RequestBuilderListener {
         //NOP
     }
 
+    override fun addCookie(exportContext: ExportContext, request: Request, cookie: Cookie) {
+        //NOP
+    }
+
     override fun addResponse(exportContext: ExportContext, request: Request, response: Response) {
         //NOP
     }

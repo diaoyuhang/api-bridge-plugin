@@ -9,6 +9,7 @@ import com.intellij.psi.PsiParameter
 import com.intellij.psi.impl.source.PsiClassImpl
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.constant.HttpMethod
+import com.itangcent.common.model.Cookie
 import com.itangcent.common.model.Header
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.URL
@@ -150,7 +151,7 @@ open class SpringRequestClassExporter : RequestClassExporter() {
         val cookieValueAnn = findCookieValue(parameterExportContext.psi())
         if (cookieValueAnn != null) {
 
-            var cookieName = cookieValueAnn["value"]?.toString()
+            var cookieName = cookieValueAnn.any("name","value")?.toString()
 
             if (cookieName == null) {
                 cookieName = parameterExportContext.name()
@@ -167,6 +168,14 @@ open class SpringRequestClassExporter : RequestClassExporter() {
             ) {
                 required = true
             }
+
+            val defaultValue = findDefaultValue(cookieValueAnn) ?: ""
+            val cookie = Cookie()
+            cookie.name = cookieName
+            cookie.desc = ultimateComment
+            cookie.required = required
+            cookie.value = defaultValue
+            requestBuilderListener.addCookie(parameterExportContext, request, cookie)
 
             requestBuilderListener.appendDesc(
                 parameterExportContext,
