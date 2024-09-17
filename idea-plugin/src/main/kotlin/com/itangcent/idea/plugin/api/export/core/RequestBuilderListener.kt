@@ -90,6 +90,12 @@ interface RequestBuilderListener {
         header: Header,
     )
 
+    fun addCookie(
+        exportContext: ExportContext,
+        request: Request,
+        cookie: Cookie,
+    )
+
     //region response
     fun addResponse(
         exportContext: ExportContext,

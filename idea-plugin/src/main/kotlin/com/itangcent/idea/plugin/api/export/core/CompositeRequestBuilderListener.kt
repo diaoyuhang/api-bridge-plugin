@@ -64,6 +64,10 @@ class CompositeRequestBuilderListener :
         delegate.addHeader(exportContext, request, header)
     }
 
+    override fun addCookie(exportContext: ExportContext, request: Request, cookie: Cookie) {
+        delegate.addCookie(exportContext, request, cookie)
+    }
+
     override fun addResponse(exportContext: ExportContext, request: Request, response: Response) {
         delegate.addResponse(exportContext, request, response)
     }

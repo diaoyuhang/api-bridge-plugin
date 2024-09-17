@@ -69,6 +69,7 @@ import io.swagger.v3.oas.models.media.BinarySchema
 import io.swagger.v3.oas.models.media.Content
 import io.swagger.v3.oas.models.media.MediaType
 import io.swagger.v3.oas.models.media.StringSchema
+import io.swagger.v3.oas.models.parameters.CookieParameter
 import io.swagger.v3.oas.models.parameters.HeaderParameter
 import io.swagger.v3.oas.models.parameters.Parameter
 import io.swagger.v3.oas.models.parameters.PathParameter
@@ -455,6 +456,7 @@ open class SuvApiExporter {
 
                     operation.parameters = collectHeaderParam(request)
                     operation.parameters.addAll(collectPathParam(request))
+                    operation.parameters.addAll(collectCookieParam(request))
 
                     val typeSet = mutableSetOf<String>()
                     operation.parameters.addAll(collectQueryParam(request, typeSet, someAnnotationsInfo))
@@ -741,6 +743,21 @@ open class SuvApiExporter {
                 } else {
                     null
                 }
+            } ?: mutableListOf()
+
+        private fun collectCookieParam(request: Request): List<Parameter> =
+            request.cookies?.mapNotNull { cookie ->
+                val parameter = CookieParameter().apply {
+                    name = cookie.name
+                    required = cookie.required
+
+                    schema = cookie.value?.javaClass?.let {
+                        SchemaBuildUtil.getTypeSchemaBuild(it.name)
+                            .buildSchema(cookie, null, linkedMapOf(), null)
+                    }
+                    cookie.exts()
+                }
+                parameter
             } ?: mutableListOf()
 
         private fun writeJson(openAPI: OpenAPI): String {

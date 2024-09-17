@@ -106,6 +106,14 @@ open class DefaultRequestBuilderListener : RequestBuilderListener {
         request.headers!!.add(header)
     }
 
+    override fun addCookie(exportContext: ExportContext, request: Request, cookie: Cookie) {
+        if (request.cookies == null) {
+            request.cookies = LinkedList()
+        }
+        request.cookies!!.removeIf { it.name == cookie.name }
+        request.cookies!!.add(cookie)
+    }
+
     override fun addResponse(exportContext: ExportContext, request: Request, response: Response) {
         if (request.response == null) {
             request.response = LinkedList()
