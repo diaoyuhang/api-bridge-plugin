@@ -8,6 +8,7 @@ import com.intellij.psi.PsiMethod
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.dto.ResultDto
+import com.itangcent.common.kit.equalIgnoreCase
 import com.itangcent.common.kit.fromJson
 import com.itangcent.common.kit.toJson
 import com.itangcent.common.logger.traceError
@@ -544,7 +545,9 @@ open class SuvApiExporter {
             val requestBody = RequestBody()
             requestBodyInfo.requestBody = requestBody
             requestBody.content = content
-            operation.requestBody = requestBody
+            if (!request.method.equalIgnoreCase(HttpMethod.GET)) {
+                operation.requestBody = requestBody
+            }
 
             for (value in methodAttributes.methodConsumes) {
                 val mediaTypeObject = MediaType()
@@ -957,10 +960,10 @@ open class SuvApiExporter {
     companion object {
 
         private val EXPORTER_CHANNELS: List<*> = listOf(
-            ApiExporterWrapper(PostmanApiExporterAdapter::class, "Postman", Request::class),
-            ApiExporterWrapper(MarkdownApiExporterAdapter::class, "Markdown", Request::class, MethodDoc::class),
-            ApiExporterWrapper(CurlApiExporterAdapter::class, "Curl", Request::class),
-            ApiExporterWrapper(HttpClientApiExporterAdapter::class, "HttpClient", Request::class),
+//            ApiExporterWrapper(PostmanApiExporterAdapter::class, "Postman", Request::class),
+//            ApiExporterWrapper(MarkdownApiExporterAdapter::class, "Markdown", Request::class, MethodDoc::class),
+//            ApiExporterWrapper(CurlApiExporterAdapter::class, "Curl", Request::class),
+//            ApiExporterWrapper(HttpClientApiExporterAdapter::class, "HttpClient", Request::class),
             ApiExporterWrapper(ApiPlatformExporterAdapter::class, "ApiPlatform", Request::class)
         )
     }
