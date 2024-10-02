@@ -1,5 +1,6 @@
 package com.itangcent.idea.plugin.api.export.suv
 
+import com.fasterxml.jackson.databind.SerializationFeature
 import com.google.inject.Inject
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
@@ -428,6 +429,11 @@ open class SuvApiExporter {
 
     class ApiPlatformExporterAdapter : PostmanApiExporterAdapter() {
 
+        companion object{
+            //搜集的自定义对象完整性标识Map
+            val OBJECT_INTEGRITY_MAP = linkedMapOf<String,Boolean>();
+        }
+
         override fun doExportDocs(docs: MutableList<Doc>) {
             try {
                 val projectFilePath = project.basePath
@@ -524,7 +530,11 @@ open class SuvApiExporter {
             request: Request,
             operation: Operation
         ): Content {
+            //先清空对象完整标识缓存
+            OBJECT_INTEGRITY_MAP.clear();
             val requestSchema = SchemaBuildUtil.obtainTypeSchema(request.body, linkedMapOf())
+
+            OBJECT_INTEGRITY_MAP.clear();
             val responseSchema =
                 request.response?.get(0)?.let { SchemaBuildUtil.obtainTypeSchema(it.body, linkedMapOf()) }
 
@@ -710,6 +720,7 @@ open class SuvApiExporter {
                     if (fieldAnnoInfo.contains(queryParam.name)) {
                         val fieldMapInfo = fieldAnnoInfo[queryParam.name] as LinkedHashMap<String, *>
                         AnnoInfoAssemble.SchemaAnnoAssemble.assembleInfo(schema, fieldMapInfo)
+                        description = schema.description
                     }
                 }
                 param
@@ -766,8 +777,10 @@ open class SuvApiExporter {
         private fun writeJson(openAPI: OpenAPI): String {
             val springDocConfigProperties = SpringDocConfigProperties()
             val objectMapperProvider = ObjectMapperProvider(springDocConfigProperties);
+            var jsonMapper = objectMapperProvider.jsonMapper()
+            jsonMapper.configure(SerializationFeature.FAIL_ON_SELF_REFERENCES, false)
 
-            return objectMapperProvider.jsonMapper().writerFor(openAPI.javaClass).writeValueAsString(openAPI)
+            return jsonMapper.writerFor(openAPI.javaClass).writeValueAsString(openAPI)
         }
 
         private fun buildOpenApi(title: String, version: String): OpenAPI {

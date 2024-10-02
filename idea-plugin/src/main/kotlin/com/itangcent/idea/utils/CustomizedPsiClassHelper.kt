@@ -19,11 +19,11 @@ import com.itangcent.intellij.jvm.AccessibleField
 import com.itangcent.intellij.jvm.PsiExpressionResolver
 import com.itangcent.intellij.jvm.duck.DuckType
 import com.itangcent.intellij.jvm.element.ExplicitClass
-import com.itangcent.intellij.psi.ObjectHolder
-import com.itangcent.intellij.psi.ResolveContext
-import com.itangcent.intellij.psi.computer
-import com.itangcent.intellij.psi.getOrResolve
+import com.itangcent.intellij.psi.*
 import com.itangcent.utils.isCollections
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 /**
  * support rules:
@@ -158,4 +158,50 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
     }
 
     companion object : Log()
+
+    override fun getTypeObject(duckType: DuckType?, context: PsiElement, option: Int): Any? {
+        val resolveContext = getResolveContext().withOption(option)
+        val result = doGetTypeObject(duckType, context, resolveContext).getOrResolveV2()
+        if (resolveContext.blocked()) {
+            logger.error("The complexity of ${duckType?.canonicalText()} has exceeded the limit. It is blocked due to ${resolveContext.blockInfo()}")
+        }
+        return result
+    }
+
+    private fun ObjectHolder?.getOrResolveV2(): Any? {
+        this ?: return null
+        if (this.notResolved()) {
+            val unResolvedObjectHolders = collectUnResolvedObjectHoldersAsListV2()
+            for (unResolvedObjectHolder in unResolvedObjectHolders) {
+                unResolvedObjectHolder.resolve(null)
+            }
+            if (this.notResolved()) {
+                SimpleContext().with(this, null) {
+                    this.resolve(it)
+                    if (this.resolved()) {
+                        this.onResolve(it)
+                    }
+                }
+            }
+        }
+        return this.getObject()
+    }
+
+    private fun ObjectHolder.collectUnResolvedObjectHoldersAsListV2(): LinkedList<ObjectHolder> {
+        val unResolvedObjectHolders = LinkedList<ObjectHolder>()
+        this.collectUnResolvedObjectHolders(UnResolvedObjectHoldersAsListCollectorV2(unResolvedObjectHolders))
+        return unResolvedObjectHolders
+    }
+
+    private class UnResolvedObjectHoldersAsListCollectorV2(val unResolvedObjectHolders: LinkedList<ObjectHolder>) :
+            (ObjectHolder) -> Unit {
+        private val ids = HashSet<Long>()
+
+        override fun invoke(objectHolder: ObjectHolder) {
+            if (ids.add(objectHolder.id)) {
+                unResolvedObjectHolders.addFirst(objectHolder)
+                objectHolder.collectUnResolvedObjectHolders(this)
+            }
+        }
+    }
 }

@@ -1,6 +1,9 @@
 package com.itangcent.idea.plugin.api.export.swagger.schema
 
 import com.itangcent.common.constant.Attrs
+import com.itangcent.common.utils.copy
+import com.itangcent.idea.plugin.api.export.suv.SuvApiExporter
+import com.itangcent.idea.plugin.api.export.swagger.AnnoInfoAssemble
 import com.itangcent.idea.plugin.api.export.swagger.SchemaBuildUtil
 import io.swagger.v3.core.util.PrimitiveType
 import io.swagger.v3.oas.models.Components
@@ -18,19 +21,23 @@ class CustomObjSchemaBuild : SchemaBuild {
         if (requestBody.isEmpty()){
             return PrimitiveType.OBJECT.createProperty()
         }
-        val schema = Schema<Any>()
 
         val customObj = allObjMap[fieldType ?: requestBody[Attrs.QUALIFIED_CLASS_NAME_ATTR]]
         if (customObj != null) {
 //            schema.`$ref` = Components.COMPONENTS_SCHEMAS_REF + customObj.name
-            return customObj
+            return if (SuvApiExporter.ApiPlatformExporterAdapter.OBJECT_INTEGRITY_MAP[fieldType] == true){
+                customObj.copy() as Schema<*>
+            }else{
+                ObjectSchema()
+            }
         }
 
         val objectSchema = ObjectSchema()
         val require = requestBody[Attrs.REQUIRED_ATTR] as LinkedHashMap<String, Boolean>
         objectSchema.required = require.filter { it.value }.map { it.key }
         objectSchema.name = requestBody[Attrs.QUALIFIED_CLASS_NAME_ATTR] as String
-        allObjMap[fieldType ?: objectSchema.name] = objectSchema
+        val type = fieldType ?: objectSchema.name
+        allObjMap[type] = objectSchema
 
         val properties = linkedMapOf<String,Schema<*>?>()
         objectSchema.properties= properties
@@ -39,16 +46,11 @@ class CustomObjSchemaBuild : SchemaBuild {
                 continue
             }else{
                 val schema = SchemaBuildUtil.obtainTypeSchema(requestBody, key, allObjMap)
-                if(schema is ObjectSchema){
-//                    val refSchema = Schema<Any>()
-//                    refSchema.`$ref` = Components.COMPONENTS_SCHEMAS_REF + schema.name
-                    properties[key] = schema
-                }else{
-                    properties[key] = schema
-                }
+                AnnoInfoAssemble.SchemaAnnoAssemble.assembleInfo(schema, requestBody, key)
+                properties[key] = schema
             }
         }
-//        schema.`$ref` = Components.COMPONENTS_SCHEMAS_REF + objectSchema.name
+        SuvApiExporter.ApiPlatformExporterAdapter.OBJECT_INTEGRITY_MAP[type] = true
         return objectSchema
     }
 

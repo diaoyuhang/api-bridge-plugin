@@ -78,6 +78,7 @@ class MapSchemaBuild:SchemaBuild {
         map["java.util.HashMap"] = this
         map["com.google.gson.JsonObject"] = this
         map["com.alibaba.fastjson2.JSONObject"] = this
+        map["com.alibaba.fastjson.JSONObject"] = this
         return map
     }
 }

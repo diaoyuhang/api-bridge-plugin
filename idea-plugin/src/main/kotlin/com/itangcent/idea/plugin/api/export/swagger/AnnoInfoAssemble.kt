@@ -59,6 +59,12 @@ class AnnoInfoAssemble {
             if (maxValue != null) {
                 schema.maximum = BigDecimal(maxValue)
             }
+
+            val schemaAnnoInfo = annoInfo[Attrs.SCHEMA_ATTR]?.let { it as? LinkedHashMap<String, Any> }
+            val schemaDescription = schemaAnnoInfo?.get("description") as? String
+            if (schemaDescription != null) {
+                schema.description = schemaDescription
+            }
         }
 
     }

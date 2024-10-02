@@ -84,7 +84,8 @@ object SchemaBuildUtil {
                 } else if (fieldType.startsWith("java.util.Map") ||
                     fieldType.startsWith("java.util.HashMap") ||
                     fieldType.startsWith("com.google.gson.JsonObject") ||
-                    fieldType.startsWith("com.alibaba.fastjson2.JSONObject")
+                    fieldType.startsWith("com.alibaba.fastjson2.JSONObject")||
+                    fieldType.endsWith(".JSONObject",true)
                 ) {
                     typeSchemaBuildMap["java.util.Map"]
                 } else {

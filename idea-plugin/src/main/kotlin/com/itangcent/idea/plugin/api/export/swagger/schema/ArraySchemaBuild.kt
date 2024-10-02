@@ -53,7 +53,12 @@ class ArraySchemaBuild : SchemaBuild {
                     return SchemaBuildUtil.getTypeSchemaBuild(itemType).buildSchema(requestBody,null,allObjMap,itemType)
                 }
             }
-            return SchemaBuildUtil.getTypeSchemaBuild(itemType).buildSchema(requestBody[0],null,allObjMap,itemType)
+            return SchemaBuildUtil.getTypeSchemaBuild(itemType)
+                .buildSchema(
+                    requestBody?.takeIf { it.isNotEmpty() }?.get(0) ?:Object(),
+                    null,
+                    allObjMap,
+                    itemType)
         }else{
             return SchemaBuildUtil.getTypeSchemaBuild("*").buildSchema(requestBody[0],null,allObjMap,null)
         }
