@@ -82,13 +82,12 @@ object SchemaBuildUtil {
                 if (fieldType.endsWith(Attrs.ARRAY_TYPE_SUFFIX) || fieldType.startsWith("java.util.List")) {
                     typeSchemaBuildMap[Attrs.ARRAY_TYPE_SUFFIX]
                 } else if (fieldType.startsWith("java.util.Map") ||
-                    fieldType.startsWith("java.util.HashMap") ||
-                    fieldType.startsWith("com.google.gson.JsonObject") ||
-                    fieldType.startsWith("com.alibaba.fastjson2.JSONObject")||
-                    fieldType.endsWith(".JSONObject",true)
+                    fieldType.startsWith("java.util.HashMap")
                 ) {
                     typeSchemaBuildMap["java.util.Map"]
-                } else {
+                } else if (fieldType.endsWith(".JSONObject",true)){
+                    typeSchemaBuildMap["*"]
+                }else {
                     val firstIndex = fieldType.indexOfFirst { ch -> ch.toString() == Attrs.LT }
                     val className = if (firstIndex > -1) {
                         fieldType.subSequence(0, firstIndex).toString()

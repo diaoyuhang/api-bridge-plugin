@@ -19,6 +19,9 @@ class ObjectSchemaBuild:SchemaBuild {
         map["*"] = this
         map["?"] = this
         map["java.lang.Object"] = this
+        map["com.google.gson.JsonObject"] = this
+        map["com.alibaba.fastjson2.JSONObject"] = this
+        map["com.alibaba.fastjson.JSONObject"] = this
         return map
     }
 }

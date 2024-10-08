@@ -30,13 +30,16 @@ class MapSchemaBuild:SchemaBuild {
                 val fieldType = if (fieldType.isNullOrBlank()) "*" else fieldType
 
                 val firstIndex = fieldType.indexOfFirst { ch -> ch.toString() == Attrs.LT }
+                val subRequestBody =
+                    requestBody[StringUtils.EMPTY] ?: linkedMapOf<String, Any>()
+
                 mapSchema.additionalProperties = if(firstIndex>-1){
                     val generics = fieldType.subSequence(firstIndex + 1, fieldType.length - 1)
                     val itemType = generics.split(Attrs.COMMA).drop(1).joinToString(Attrs.COMMA)
 
-                   SchemaBuildUtil.getTypeSchemaBuild(itemType).buildSchema(requestBody[StringUtils.EMPTY]!!, null, allObjMap, itemType)
+                   SchemaBuildUtil.getTypeSchemaBuild(itemType).buildSchema(subRequestBody!!, null, allObjMap, itemType)
                 }else{
-                    SchemaBuildUtil.getTypeSchemaBuild(fieldType).buildSchema(requestBody[StringUtils.EMPTY]!!, null, allObjMap, fieldType)
+                    SchemaBuildUtil.getTypeSchemaBuild(fieldType).buildSchema(subRequestBody!!, null, allObjMap, fieldType)
                 }
 
             }
@@ -63,7 +66,11 @@ class MapSchemaBuild:SchemaBuild {
             }
             //逗号分割后，从第二开始再逗号拼接
             val itemType = generics.split(Attrs.COMMA).drop(1).joinToString(Attrs.COMMA)
-            val paramBody = (requestBody[fieldName] as LinkedHashMap<String, *>)[StringUtils.EMPTY]
+            var paramBody = (requestBody[fieldName] as LinkedHashMap<String, *>)[StringUtils.EMPTY]
+
+            paramBody =
+                paramBody ?: linkedMapOf<String, Any>()
+
             return SchemaBuildUtil.getTypeSchemaBuild(itemType).buildSchema(paramBody!!, null, allObjMap, itemType)
 
         } else {
